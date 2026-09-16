@@ -1,10 +1,9 @@
 # Running these solutions on the university server (`nlp2`)
 
-This is a separate machine from `nlp1` (see `VM_RUNBOOK.md`) — different
-GPU inventory, so it gets its own runbook rather than folding into that
-one. Everything trained on this repo up to now (solutions 02-06) ran on
-Google Colab Pro (A100 40GB); this doc covers moving the rest of that work
-onto `nlp2`.
+Everything trained on this repo up to now (solutions 02, 04, 05, 06 — real
+`checkpoint/` + `val_scores.json` for each) ran on Google Colab Pro (A100
+40GB). This doc covers running the rest on `nlp2` instead. Solutions 01 and
+03 have never been run at all yet — no checkpoint, no scores.
 
 **Hardware**: 3 GPUs, all plain RTX 3090 @ 24 GB (not 3090 Ti — same VRAM,
 slightly lower clocks), indices `0`, `1`, `2`. Driver 590.48.01, CUDA 13.1.
@@ -19,34 +18,53 @@ assume Colab wall-clock times carry over. Run a `--smoke_test` first and
 read its per-step timing from the log to get a real nlp2-specific estimate
 before scheduling a long full run.
 
-## 1. Transfer
+## 1. Get the code
 
-This repo is **not** a git repo, so use `rsync` over SSH rather than
-`git clone`/`git pull`:
+The code is on GitHub now — clone it directly on nlp2, no transfer from a
+local machine needed for this part:
 
 ```bash
-rsync -avz --progress \
-  --exclude 'solutions/*/checkpoint/' \
-  --exclude '**/__pycache__/' \
-  "/path/to/local/Shroom-visions Shared Task/data" \
-  "/path/to/local/Shroom-visions Shared Task/shroom-vis-images" \
-  "/path/to/local/Shroom-visions Shared Task/participant_kit" \
-  "/path/to/local/Shroom-visions Shared Task/solutions" \
-  you@nlp2:/path/to/remote/Shroom-visions-Shared-Task/
+git clone https://github.com/jameVee/Multilingual-Hallucination-Detection-in-Vision-Language-Models.git
+cd Multilingual-Hallucination-Detection-in-Vision-Language-Models
 ```
 
-`--exclude 'solutions/*/checkpoint/'` skips the already-trained Colab
-adapters (~180 MB each, add nothing to new nlp2 runs). **Do not exclude**
-`solutions/03_vlm_lora_synthetic_augmented/ocr_cache.json` — that's the
-one artifact worth keeping, since it saves the ~6hr EasyOCR pass shared by
-solutions 03-06. `solutions/common/scorer_local.py` imports
-`participant_kit/scorer.py` by relative path, so the directory layout must
-stay intact end to end.
+This already includes `solutions/03_vlm_lora_synthetic_augmented/
+ocr_cache.json` (and the other solutions' copies) — the ~6hr EasyOCR pass
+shared by solutions 03-06 never needs to be repeated. It does **not**
+include `data/`, `shroom-vis-images/`, `docs/`, `paper/`, or `thesis
+proposal/` (excluded from the repo on purpose — see its `.gitignore`), and
+excludes every solution's `checkpoint/` (167MB adapter files, over GitHub's
+100MB limit) — get those two pieces separately, below.
 
-## 2. Environment setup
+## 2. Get the data
 
-Same recipe already validated on a 24GB-class GPU for `nlp1` — nothing
-nlp2-specific here beyond the CUDA wheel choice below:
+`data/` and `shroom-vis-images/` aren't in the git repo. Pull them from the
+original shared-task hosting instead of copying from a local machine:
+
+```bash
+mkdir -p data shroom-vis-images
+curl -L -o /tmp/shroom-data.zip https://a3s.fi/mickusti-2007780-pub/shroom-visions-data.zip
+curl -L -o /tmp/shroom-images.tar.gz https://a3s.fi/mickusti-2007780-pub/shroom-visions-images.tar.gz
+unzip /tmp/shroom-data.zip -d data
+tar -xzf /tmp/shroom-images.tar.gz -C shroom-vis-images
+```
+**Verify the extracted layout before trusting it** — `solutions/common/
+data_io.py` expects `data/train.jsonl`, `data/val.jsonl`, `data/test.jsonl`
+directly (not nested one level deeper inside whatever top-level folder name
+the zip/tarball uses); move files up a level if the extraction nests them.
+`python -c "from solutions.common import data_io; print(len(data_io.load_jsonl(data_io.TRAIN_FILE)))"`
+should print `12082` once the layout is right.
+
+If those links are ever down, `rsync` from a local checkout that already
+has both folders is the fallback:
+```bash
+rsync -avz --progress \
+  "/path/to/local/Shroom-visions Shared Task/data" \
+  "/path/to/local/Shroom-visions Shared Task/shroom-vis-images" \
+  you@nlp2:/path/to/remote/Multilingual-Hallucination-Detection-in-Vision-Language-Models/
+```
+
+## 3. Environment setup
 
 ```bash
 python3 -m venv .venv
@@ -60,8 +78,7 @@ pip install "git+https://github.com/huggingface/transformers"
 pip install -r solutions/requirements.txt
 
 # torch: nlp2's driver (590.48.01 / CUDA 13.1) is backward-compatible with
-# cu12x wheels, same reasoning VM_RUNBOOK.md documents for nlp1's slightly
-# older driver -- cu124 is the proven-working choice, not just a guess.
+# cu12x wheels -- cu124 is the proven-working choice, not just a guess.
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
 ```
 
@@ -72,14 +89,14 @@ python -c "import torch; print(torch.cuda.is_available(), torch.cuda.device_coun
 nvidia-smi   # confirm 1 or 2 are still free -- this is a shared machine
 ```
 
-## 3. Sanity check the scorer first
+## 4. Sanity check the scorer first
 
 ```bash
 python -m solutions.common.scorer_local
 # expect: IoU=1.0000, CorLbl=1.0000, Cor≈0.99
 ```
 
-## 4. Run jobs so they survive disconnecting
+## 5. Run jobs so they survive disconnecting
 
 **Yes, jobs keep running after you log out — but only if launched the
 right way.** Unlike Colab (where the whole runtime dies after ~24h and
@@ -111,7 +128,7 @@ Either way, the actual deliverables (`val_predictions.jsonl`,
 they exist independently of whether you're attached to any session, so
 checking the files after reconnecting works just as well as reattaching.
 
-## 5. Aim 1: the missing ablation cell (solution 03)
+## 6. Aim 1: the missing ablation cell (solution 03)
 
 ```bash
 cd solutions/03_vlm_lora_synthetic_augmented
@@ -122,14 +139,14 @@ python run_pipeline.py --gpu_index 1 --epochs 2 --grad_accum 8 --save_steps 250 
 # Ctrl+B, D once it's running
 ```
 No `--skip_llm` needed (hardcoded on already) and no `--skip_ocr_extract`
-needed either — `generate_synthetic.py` reuses the transferred
-`ocr_cache.json` automatically since it already exists at that path. This
-is the one cell of the `r_max` × LLM-assisted-injection ablation the
-original shared-task submission never trained (`paper/main.tex`'s
-Limitations section) — see `solutions/03_vlm_lora_synthetic_augmented/
-README.md` for the full rationale.
+needed either — `generate_synthetic.py` reuses the cloned `ocr_cache.json`
+automatically since it already exists at that path. This is the one cell
+of the `r_max` × LLM-assisted-injection ablation the original shared-task
+submission never trained (`paper/main.tex`'s Limitations section) — see
+`solutions/03_vlm_lora_synthetic_augmented/README.md` for the full
+rationale.
 
-## 6. Aim 1: multi-seed reruns (baseline + tuned, 2 extra seeds each)
+## 7. Aim 1: multi-seed reruns (baseline + tuned, 2 extra seeds each)
 
 None of the `run_pipeline.py` scripts expose `--seed` — rerunning one
 as-is retrains the *identical* model every time (`train_lora.py`'s default
@@ -137,10 +154,10 @@ is a hardcoded 42, never wired through). `solutions/common/
 run_seed_variant.py` fixes this for exactly the two configs in scope: it
 trains + predicts + scores a given `--seed` against an *already-existing*
 `--train_file`, skipping synthetic-data generation entirely — solution 05's
-`train_augmented.jsonl` gets reused unchanged across all 3 seeds, isolating
-pure training-seed variance from synthetic-generation randomness. Output
-lands in `<checkpoint_dir>_seed<seed>/`, so seeds and the original
-default-seed run never collide.
+`train_augmented.jsonl` (already in the repo) gets reused unchanged across
+all 3 seeds, isolating pure training-seed variance from synthetic-
+generation randomness. Output lands in `<checkpoint_dir>_seed<seed>/`, so
+seeds and the original default-seed run (from Colab) never collide.
 
 ```bash
 # round 1 -- one baseline seed + one tuned seed in parallel on the two free GPUs
@@ -173,16 +190,63 @@ python solutions/common/run_seed_variant.py \
 independently onto disk (`checkpoint_seed<N>/val_scores.json`), so none of
 this requires staying attached or connected between rounds.
 
-## 7. Every other solution (01, 04, 06)
+## 8. Reference: every other solution
 
-Same commands as documented in `VM_RUNBOOK.md` sections 5-6 — only the GPU
-indices differ (nlp2 only has 3 uniform 24GB GPUs at `0`/`1`/`2`, none of
-nlp1's 11GB 2080 Tis, so the low-VRAM fallback flags documented there
-aren't needed here; skip `0` specifically while it's occupied). Default
-model (`Qwen/Qwen3-VL-8B-Instruct`, 4-bit) fits any of nlp2's 3 GPUs
-comfortably.
+Not part of Aim 1, but here for completeness if you ever need to rerun or
+extend one of these on nlp2. Default model everywhere is
+`Qwen/Qwen3-VL-8B-Instruct` (dense, 4-bit) — fits any of nlp2's 3 GPUs
+comfortably, so none of the low-VRAM fallback flags an 11GB card would
+need (smaller `--max_pixels`, attention-only `--target_modules`) are
+necessary here. Pass `--model_id Qwen/Qwen3-VL-30B-A3B-Instruct` for the
+bigger sparse-MoE alternative on any command below if you want it.
 
-## 8. Comparing results
+**Verification level differs by solution.** Solutions 02, 04, 05, and 06
+already have a real, complete Colab run each (`val_scores.json` on disk) —
+proof the code path genuinely works end to end. Solutions 01 and 03 have
+never been run anywhere — treat their first nlp2 run as the actual first
+real test, `--smoke_test` (or `--dry_run` where available) first, no
+skipping straight to a full run.
+
+### 01 — Lightweight tagger (cheapest, ~20-40 min even on a 2080 Ti-class card)
+
+```bash
+cd solutions/01_lightweight_tagger
+python run_pipeline.py --gpu_index 1 --epochs 3 --batch_size 16
+```
+CLIP is frozen and only runs once (image features cached to
+`image_cache.pt`), so this is XLM-R-base-sized training — cheap on any GPU.
+
+### 02 — VLM LoRA fine-tune, real data only (already has a real Colab run)
+
+```bash
+cd solutions/02_vlm_lora_real_data
+python train_lora.py --dry_run
+python run_pipeline.py --smoke_test --gpu_index 1
+python run_pipeline.py --gpu_index 1 --epochs 2 --grad_accum 8
+```
+
+### 04 — VLM LoRA, synthetic augmented, r_max=8 + LLM (already has a real Colab run)
+
+```bash
+cd solutions/04_vlm_lora_synthetic_augmented_llm
+export ANTHROPIC_API_KEY=sk-ant-...   # set this yourself; never paste into a chat
+python run_pipeline.py --smoke_test --gpu_index 1
+python run_pipeline.py --gpu_index 1 --epochs 2 --grad_accum 8
+```
+Reuses the cloned `ocr_cache.json` automatically; `llm_synth_cache.json`
+caches API calls incrementally, so an interrupted run resumes instead of
+re-spending budget.
+
+### 06 — VLM LoRA, synthetic augmented, tuned r_max=3 + LLM (already has a real Colab run)
+
+```bash
+cd solutions/06_vlm_lora_synthetic_tuned_llm
+export ANTHROPIC_API_KEY=sk-ant-...
+python run_pipeline.py --smoke_test --gpu_index 1
+python run_pipeline.py --gpu_index 1 --epochs 2 --grad_accum 8
+```
+
+## 9. Comparing results
 
 Once you have `val_scores.json` for whichever solutions/seeds you ran, fill
 in `solutions/RESULTS_SUMMARY.md`. For the multi-seed reruns specifically,

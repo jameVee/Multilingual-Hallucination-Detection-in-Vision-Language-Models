@@ -2,7 +2,7 @@
 # 02_vlm_lora_real_data, the synthetic-augmentation/tuned solutions
 # 03-06, common/).
 # Derived by grepping actual import statements across solutions/*.py, not
-# guessed -- see solutions/VM_RUNBOOK.md for full setup/run instructions.
+# guessed -- see solutions/NLP2_RUNBOOK.md for full setup/run instructions.
 #
 # torch is intentionally NOT pinned here -- install the CUDA build matching
 # your GPU driver separately, e.g.:
@@ -16,7 +16,8 @@
 #   pip install "git+https://github.com/huggingface/transformers"
 # If you instead pass --model_id Qwen/Qwen2-VL-2B-Instruct to fall back to
 # the original, fully locally-verified model, transformers==4.46.3 is known
-# to work (see solutions/VM_RUNBOOK.md for that alternate path).
+# to work (pin that instead of the git install above, and add back
+# `pip install qwen-vl-utils`).
 
 # --- core ML stack ---
 huggingface-hub<1.0

@@ -1,7 +1,7 @@
 # Results Summary
 
-Fill in from each solution's `val_scores.json` after running on the VM (see
-`VM_RUNBOOK.md`). All numbers come from `solutions/common/scorer_local.py`,
+Fill in from each solution's `val_scores.json` after running on the server
+(see `NLP2_RUNBOOK.md`). All numbers come from `solutions/common/scorer_local.py`,
 which calls the *official* `participant_kit/scorer.py` functions directly —
 directly comparable across all solutions here, but **not** directly
 comparable to the numbers in `last_experiment/*/results.csv`, which used
