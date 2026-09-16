@@ -44,26 +44,45 @@ repo root (`Multilingual-Hallucination-Detection-in-Vision-Language-Models/`):
 
 ```bash
 curl -L -o /tmp/shroom-data.zip "https://drive.google.com/uc?export=download&id=1peJu1P79J_JsthDySdXj_B-kVuOyYWi-"
-curl -L -o /tmp/shroom-images.tar.gz https://a3s.fi/mickusti-2007780-pub/shroom-visions-images.tar.gz
+
+pip install -q gdown   # plain curl does NOT work for the images archive -- see below
+gdown "https://drive.google.com/uc?id=1Cpb2A8hUMl3_tPSIDPLIDn5MP7nTwKl-" -O /tmp/shroom-images.tar.gz
+
 unzip /tmp/shroom-data.zip
 tar -xzf /tmp/shroom-images.tar.gz
 ```
 
 **On the data link**: a plain Google Drive share URL
-(`.../file/d/<id>/view?usp=sharing`, which is what was here before) does
+(`.../file/d/<id>/view?usp=sharing`, an earlier version of this doc) does
 **not** work with `curl` — it returns Drive's ~80KB HTML viewer page, not
 the file, and `unzip` fails on it with "End-of-central-directory signature
-not found." The `uc?export=download&id=<id>` form above is the fix —
-verified against this exact file: it 303-redirects to a real
+not found." The `uc?export=download&id=<id>` form above is the fix for
+this file specifically — verified end-to-end: it 303-redirects to a real
 `application/octet-stream` download and inflates to a valid
-`data/{train,val,test}.jsonl` zip (14.7MB uncompressed). This only worked
-directly because the file is small enough that Drive skipped its
-"can't scan this file for virus" confirmation interstitial; a larger file
-shared the same way can still return an HTML confirmation page instead of
-the bytes, which is one more reason `a3s.fi`-hosted links (used for the
-images archive) are more dependable than a personal Drive share for
-anything sizeable — worth keeping in mind if this data link ever needs
-replacing again.
+`data/{train,val,test}.jsonl` zip (14.7MB uncompressed).
+
+**On the images link — this one needs `gdown`, plain `curl` genuinely does
+not work here.** Tried the same `uc?export=download` form first: it
+returns HTTP 200 with a *"Google Drive - Virus scan warning"* HTML page
+instead of the file — Drive can't scan archives past a certain size (this
+one is 2.47GB) and gates the download behind a click-through confirmation
+that a bare `curl -L` can't get past, unlike the small data.zip above.
+`gdown` (a small, purpose-built tool — `pip install gdown`, works fine
+outside the venv since it's just a download utility, not a project
+dependency) automates exactly that confirmation step; verified with a
+partial download that it resolves to a real `confirm=t&uuid=...` URL and
+streams genuine gzip bytes (`\x1f\x8b` magic number), not HTML. Expect the
+2.47GB download itself to take a while depending on nlp2's link speed —
+run it inside `tmux` (section 5 below) if it's going to take more than a
+few minutes.
+
+If a Drive link like this one is ever swapped out again: a link that
+returns HTML instead of the expected binary — check with `curl -sIL <url>
+| grep -i content-type`, or just peek at the first bytes — is the standard
+failure mode for anything hosted on Drive past a few dozen MB, `a3s.fi`
+(the original shared-task hosting) doesn't have this problem at all, so
+prefer it over a personal Drive copy for anything sizeable when there's a
+choice.
 
 **No `-d`/`-C` target and no `mkdir` first, on purpose**: both archives
 already contain their own top-level folder internally
