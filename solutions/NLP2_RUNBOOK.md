@@ -137,6 +137,19 @@ pip install -r solutions/requirements.txt
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
 ```
 
+Also set this once per shell session, before running anything that trains —
+the Colab notebooks always set it, but nothing in `train_lora.py`/
+`run_pipeline.py` does, so it's silently missing from this CLI workflow
+unless you export it yourself:
+
+```bash
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+```
+Reduces CUDA memory fragmentation (PyTorch reserving memory it isn't
+currently using) — matters more here than it did on Colab's A100, since
+nlp2's 24GB 3090s have much less headroom to absorb the waste. See
+section 6 for a real OOM this was a contributing factor in.
+
 Verify CUDA is visible and pick a genuinely free GPU before running anything:
 
 ```bash
@@ -187,10 +200,11 @@ checking the files after reconnecting works just as well as reattaching.
 
 ```bash
 cd solutions/03_vlm_lora_synthetic_augmented
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 python run_pipeline.py --smoke_test --gpu_index 1
 
 tmux new -s sol03
-python run_pipeline.py --gpu_index 1 --epochs 2 --grad_accum 8 --save_steps 250 --resume
+python run_pipeline.py --gpu_index 1 --epochs 2 --grad_accum 8 --save_steps 250 --resume --max_seq_len 3072
 # Ctrl+B, D once it's running
 ```
 No `--skip_llm` needed (hardcoded on already) and no `--skip_ocr_extract`
@@ -200,6 +214,35 @@ of the `r_max` × LLM-assisted-injection ablation the original shared-task
 submission never trained (`paper/main.tex`'s Limitations section) — see
 `solutions/03_vlm_lora_synthetic_augmented/README.md` for the full
 rationale.
+
+**Known CUDA OOM risk on 24GB cards, hit for real on this run** — `--gpu_index 1`
+above is deliberate, not a typo for `0`: a real nlp2 run of this exact
+solution OOM'd after ~5 minutes with `--gpu_index 0`
+(`torch.OutOfMemoryError`, 21.91 GiB used by the training process alone,
+1.65 GiB free on a 23.56 GiB card — the arithmetic rules out another job
+sharing GPU 0 at the time; this process alone used nearly the whole card).
+Two compounding, already-documented causes, both addressed in the command
+above:
+- `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` was missing (only
+  ever set inside the Colab notebooks, never in the scripts themselves —
+  the OOM message's own suggested fix, and it reduces the "reserved but
+  unallocated" fragmentation waste, which was 5.67 GiB on the failed run).
+- `train_lora.py`'s own docstring (around `--max_seq_len`) documents this
+  *exact* failure signature happening before, on a 40GB Colab A100: "a run
+  stable for 726 steps suddenly needed to allocate 25GB more for one
+  attention op, almost certainly from one unusually long response (e.g.
+  an `inject_repetition_loop`-generated 'other' example)". Solutions
+  03-06 all share this injection method, so the same risk applies to all
+  of them on 24GB, just with less warning before it hits than it had on
+  the A100. `--max_seq_len 3072` (down from the 4096 default) lowers the
+  worst-case sequence length this can spike on; drop further (e.g. `2048`)
+  or add `--max_pixels 401408` if it still OOMs.
+
+If a run does OOM anyway, re-launching the exact same command is safe —
+`--resume` picks up from the last `--save_steps 250` checkpoint rather
+than restarting, *if* one was actually written yet (`ls checkpoint/` —
+5 minutes in is usually too early to have reached step 250, so check
+before assuming there's progress to resume).
 
 ## 7. Aim 1: multi-seed reruns (baseline + tuned, 2 extra seeds each)
 
@@ -214,6 +257,14 @@ all 3 seeds, isolating pure training-seed variance from synthetic-
 generation randomness. Output lands in `<checkpoint_dir>_seed<seed>/`, so
 seeds and the original default-seed run (from Colab) never collide.
 
+`--max_seq_len 3072` on the two `sol05-*` commands (not `sol02-*`) for the
+same reason as section 6 — solution 05's `train_augmented.jsonl` contains
+the same heuristic-injection `other`-class examples that OOM'd solution 03;
+the real-data baseline (`data/train.jsonl`, no synthetic amplification of
+rare long responses) is markedly less exposed to this, so it's left at the
+default there. `export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`
+once per shell (section 3) applies to all four of these regardless.
+
 ```bash
 # round 1 -- one baseline seed + one tuned seed in parallel on the two free GPUs
 tmux new -s sol02-seed123
@@ -225,7 +276,8 @@ python solutions/common/run_seed_variant.py \
 tmux new -s sol05-seed123
 python solutions/common/run_seed_variant.py \
   --train_file solutions/05_vlm_lora_synthetic_tuned/train_augmented.jsonl \
-  --checkpoint_dir solutions/05_vlm_lora_synthetic_tuned/checkpoint --seed 123 --gpu_index 2
+  --checkpoint_dir solutions/05_vlm_lora_synthetic_tuned/checkpoint --seed 123 --gpu_index 2 \
+  --max_seq_len 3072
 # Ctrl+B, D
 
 # round 2 -- once round 1 finishes and frees both GPUs (check with tmux ls / nvidia-smi)
@@ -238,7 +290,8 @@ python solutions/common/run_seed_variant.py \
 tmux new -s sol05-seed2024
 python solutions/common/run_seed_variant.py \
   --train_file solutions/05_vlm_lora_synthetic_tuned/train_augmented.jsonl \
-  --checkpoint_dir solutions/05_vlm_lora_synthetic_tuned/checkpoint --seed 2024 --gpu_index 2
+  --checkpoint_dir solutions/05_vlm_lora_synthetic_tuned/checkpoint --seed 2024 --gpu_index 2 \
+  --max_seq_len 3072
 # Ctrl+B, D
 ```
 `tmux ls` shows which sessions are still running; each finishes
@@ -249,11 +302,16 @@ this requires staying attached or connected between rounds.
 
 Not part of Aim 1, but here for completeness if you ever need to rerun or
 extend one of these on nlp2. Default model everywhere is
-`Qwen/Qwen3-VL-8B-Instruct` (dense, 4-bit) — fits any of nlp2's 3 GPUs
-comfortably, so none of the low-VRAM fallback flags an 11GB card would
-need (smaller `--max_pixels`, attention-only `--target_modules`) are
-necessary here. Pass `--model_id Qwen/Qwen3-VL-30B-A3B-Instruct` for the
-bigger sparse-MoE alternative on any command below if you want it.
+`Qwen/Qwen3-VL-8B-Instruct` (dense, 4-bit), and the *baseline* (solution 02,
+real data only, no long synthetic `other`-class responses) fits nlp2's 24GB
+3090s comfortably with no extra flags. **The synthetic-augmented ones
+(03-06) are less safe than this section originally claimed** — solution
+03 actually OOM'd on nlp2 (section 6 has the full diagnosis); set
+`PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` and consider
+`--max_seq_len 3072` for 04/05/06 too, not just 03, since they share the
+same injection method that triggers it. Pass `--model_id
+Qwen/Qwen3-VL-30B-A3B-Instruct` for the bigger sparse-MoE alternative on
+any command below if you want it (expect it to need those same flags too).
 
 **Verification level differs by solution.** Solutions 02, 04, 05, and 06
 already have a real, complete Colab run each (`val_scores.json` on disk) —
@@ -285,20 +343,22 @@ python run_pipeline.py --gpu_index 1 --epochs 2 --grad_accum 8
 ```bash
 cd solutions/04_vlm_lora_synthetic_augmented_llm
 export ANTHROPIC_API_KEY=sk-ant-...   # set this yourself; never paste into a chat
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 python run_pipeline.py --smoke_test --gpu_index 1
-python run_pipeline.py --gpu_index 1 --epochs 2 --grad_accum 8
+python run_pipeline.py --gpu_index 1 --epochs 2 --grad_accum 8 --max_seq_len 3072
 ```
 Reuses the cloned `ocr_cache.json` automatically; `llm_synth_cache.json`
 caches API calls incrementally, so an interrupted run resumes instead of
-re-spending budget.
+re-spending budget. Same OOM risk as solution 03 (section 6) — same fix.
 
 ### 06 — VLM LoRA, synthetic augmented, tuned r_max=3 + LLM (already has a real Colab run)
 
 ```bash
 cd solutions/06_vlm_lora_synthetic_tuned_llm
 export ANTHROPIC_API_KEY=sk-ant-...
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 python run_pipeline.py --smoke_test --gpu_index 1
-python run_pipeline.py --gpu_index 1 --epochs 2 --grad_accum 8
+python run_pipeline.py --gpu_index 1 --epochs 2 --grad_accum 8 --max_seq_len 3072
 ```
 
 ## 9. Comparing results
