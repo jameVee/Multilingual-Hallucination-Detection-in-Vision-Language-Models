@@ -38,24 +38,45 @@ excludes every solution's `checkpoint/` (167MB adapter files, over GitHub's
 
 ## 2. Get the data
 
-`data/` and `shroom-vis-images/` aren't in the git repo. Pull them from the
-original shared-task hosting instead of copying from a local machine:
+`data/` and `shroom-vis-images/` aren't in the git repo. Pull them from a
+hosted copy instead of copying from a local machine — run this from the
+repo root (`Multilingual-Hallucination-Detection-in-Vision-Language-Models/`):
 
 ```bash
-mkdir -p data shroom-vis-images
-curl -L -o /tmp/shroom-data.zip https://a3s.fi/mickusti-2007780-pub/shroom-visions-data.zip
+curl -L -o /tmp/shroom-data.zip "https://drive.google.com/uc?export=download&id=1peJu1P79J_JsthDySdXj_B-kVuOyYWi-"
 curl -L -o /tmp/shroom-images.tar.gz https://a3s.fi/mickusti-2007780-pub/shroom-visions-images.tar.gz
-unzip /tmp/shroom-data.zip -d data
-tar -xzf /tmp/shroom-images.tar.gz -C shroom-vis-images
+unzip /tmp/shroom-data.zip
+tar -xzf /tmp/shroom-images.tar.gz
 ```
-**Verify the extracted layout before trusting it** — `solutions/common/
-data_io.py` expects `data/train.jsonl`, `data/val.jsonl`, `data/test.jsonl`
-directly (not nested one level deeper inside whatever top-level folder name
-the zip/tarball uses); move files up a level if the extraction nests them.
-`python -c "from solutions.common import data_io; print(len(data_io.load_jsonl(data_io.TRAIN_FILE)))"`
-should print `12082` once the layout is right.
 
-If those links are ever down, `rsync` from a local checkout that already
+**On the data link**: a plain Google Drive share URL
+(`.../file/d/<id>/view?usp=sharing`, which is what was here before) does
+**not** work with `curl` — it returns Drive's ~80KB HTML viewer page, not
+the file, and `unzip` fails on it with "End-of-central-directory signature
+not found." The `uc?export=download&id=<id>` form above is the fix —
+verified against this exact file: it 303-redirects to a real
+`application/octet-stream` download and inflates to a valid
+`data/{train,val,test}.jsonl` zip (14.7MB uncompressed). This only worked
+directly because the file is small enough that Drive skipped its
+"can't scan this file for virus" confirmation interstitial; a larger file
+shared the same way can still return an HTML confirmation page instead of
+the bytes, which is one more reason `a3s.fi`-hosted links (used for the
+images archive) are more dependable than a personal Drive share for
+anything sizeable — worth keeping in mind if this data link ever needs
+replacing again.
+
+**No `-d`/`-C` target and no `mkdir` first, on purpose**: both archives
+already contain their own top-level folder internally
+(`data/train.jsonl`, `data/val.jsonl`, `data/test.jsonl` in the zip;
+`shroom-vis-images/*.jpg` in the tarball — checked directly against both
+files above) — extracting at the repo root reproduces `data/` and
+`shroom-vis-images/` correctly. Extracting into a pre-made same-named
+directory instead (`unzip ... -d data`) double-nests it to `data/data/...`.
+Sanity-check afterward regardless:
+`python -c "from solutions.common import data_io; print(len(data_io.load_jsonl(data_io.TRAIN_FILE)))"`
+should print `12082`.
+
+If these links are ever down, `rsync` from a local checkout that already
 has both folders is the fallback:
 ```bash
 rsync -avz --progress \
