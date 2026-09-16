@@ -1,0 +1,42 @@
+# Requirements for everything under solutions/ (01_lightweight_tagger,
+# 02_vlm_lora_real_data, the synthetic-augmentation/tuned solutions
+# 03-06, common/).
+# Derived by grepping actual import statements across solutions/*.py, not
+# guessed -- see solutions/VM_RUNBOOK.md for full setup/run instructions.
+#
+# torch is intentionally NOT pinned here -- install the CUDA build matching
+# your GPU driver separately, e.g.:
+#   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+#
+# transformers is intentionally NOT installed from this file either.
+# Solutions 02-06 default to Qwen3-VL-8B-Instruct (bigger Qwen3-VL-30B-A3B-
+# Instruct MoE alternative also supported via --model_id), whose code is not
+# in any released transformers version as of this writing (its own model
+# card says to build from source) -- install it separately with:
+#   pip install "git+https://github.com/huggingface/transformers"
+# If you instead pass --model_id Qwen/Qwen2-VL-2B-Instruct to fall back to
+# the original, fully locally-verified model, transformers==4.46.3 is known
+# to work (see solutions/VM_RUNBOOK.md for that alternate path).
+
+# --- core ML stack ---
+huggingface-hub<1.0
+accelerate>=0.34
+peft>=0.13
+bitsandbytes
+sentencepiece
+sacremoses
+
+# --- solution 01 (lightweight tagger): CLIP + XLM-R ---
+Pillow
+tqdm
+
+# --- solutions 03-06 (synthetic augmented / tuned): OCR grounding + optional LLM injection ---
+easyocr
+anthropic
+
+# --- solutions/common/scorer_local.py dynamically loads
+#     participant_kit/scorer.py, which itself needs these ---
+pandas
+scipy
+scikit-learn
+numpy

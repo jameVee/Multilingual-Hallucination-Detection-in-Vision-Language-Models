@@ -1,0 +1,368 @@
+{
+  "none": {
+    "n": 3020,
+    "overall": {
+      "iou": 0.28443708609271523,
+      "cor": 0.28443708609271523,
+      "cor_lbl": 0.28443708609271523
+    },
+    "per_language": {
+      "en": {
+        "iou": 0.22085048010973937,
+        "cor": 0.22085048010973937,
+        "cor_lbl": 0.22085048010973937,
+        "n": 729
+      },
+      "fr": {
+        "iou": 0.2572944297082228,
+        "cor": 0.2572944297082228,
+        "cor_lbl": 0.2572944297082228,
+        "n": 754
+      },
+      "it": {
+        "iou": 0.2800528401585205,
+        "cor": 0.2800528401585205,
+        "cor_lbl": 0.2800528401585205,
+        "n": 757
+      },
+      "zh": {
+        "iou": 0.37435897435897436,
+        "cor": 0.37435897435897436,
+        "cor_lbl": 0.37435897435897436,
+        "n": 780
+      }
+    },
+    "per_label": {
+      "invention": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 1225
+      },
+      "mischaracterization": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 1358
+      },
+      "OCR": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 179
+      },
+      "miscounting": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 359
+      },
+      "other": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 255
+      }
+    }
+  },
+  "invention": {
+    "n": 3020,
+    "overall": {
+      "iou": 0.18380638225332996,
+      "cor": 0.002317880794701987,
+      "cor_lbl": 0.0006622516556291391
+    },
+    "per_language": {
+      "en": {
+        "iou": 0.19174723812608038,
+        "cor": 0.0027434842249657062,
+        "cor_lbl": 0.0,
+        "n": 729
+      },
+      "fr": {
+        "iou": 0.22149651448678334,
+        "cor": 0.0,
+        "cor_lbl": 0.0,
+        "n": 754
+      },
+      "it": {
+        "iou": 0.1655476529510391,
+        "cor": 0.003963011889035667,
+        "cor_lbl": 0.001321003963011889,
+        "n": 757
+      },
+      "zh": {
+        "iou": 0.1576712725694522,
+        "cor": 0.002564102564102564,
+        "cor_lbl": 0.001282051282051282,
+        "n": 780
+      }
+    },
+    "per_label": {
+      "invention": {
+        "iou": 0.11083419173183451,
+        "cor": 0.0006622516556291391,
+        "n_records_with_label": 3020
+      },
+      "mischaracterization": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 1358
+      },
+      "OCR": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 179
+      },
+      "miscounting": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 359
+      },
+      "other": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 255
+      }
+    }
+  },
+  "mischaracterization": {
+    "n": 3020,
+    "overall": {
+      "iou": 0.18380638225332996,
+      "cor": 0.002317880794701987,
+      "cor_lbl": 0.0
+    },
+    "per_language": {
+      "en": {
+        "iou": 0.19174723812608038,
+        "cor": 0.0027434842249657062,
+        "cor_lbl": 0.0,
+        "n": 729
+      },
+      "fr": {
+        "iou": 0.22149651448678334,
+        "cor": 0.0,
+        "cor_lbl": 0.0,
+        "n": 754
+      },
+      "it": {
+        "iou": 0.1655476529510391,
+        "cor": 0.003963011889035667,
+        "cor_lbl": 0.0,
+        "n": 757
+      },
+      "zh": {
+        "iou": 0.1576712725694522,
+        "cor": 0.002564102564102564,
+        "cor_lbl": 0.0,
+        "n": 780
+      }
+    },
+    "per_label": {
+      "invention": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 1225
+      },
+      "mischaracterization": {
+        "iou": 0.05730639855643528,
+        "cor": 0.0,
+        "n_records_with_label": 3020
+      },
+      "OCR": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 179
+      },
+      "miscounting": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 359
+      },
+      "other": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 255
+      }
+    }
+  },
+  "OCR": {
+    "n": 3020,
+    "overall": {
+      "iou": 0.18380638225332996,
+      "cor": 0.002317880794701987,
+      "cor_lbl": 0.0004966887417218543
+    },
+    "per_language": {
+      "en": {
+        "iou": 0.19174723812608038,
+        "cor": 0.0027434842249657062,
+        "cor_lbl": 0.00205761316872428,
+        "n": 729
+      },
+      "fr": {
+        "iou": 0.22149651448678334,
+        "cor": 0.0,
+        "cor_lbl": 0.0,
+        "n": 754
+      },
+      "it": {
+        "iou": 0.1655476529510391,
+        "cor": 0.003963011889035667,
+        "cor_lbl": 0.0,
+        "n": 757
+      },
+      "zh": {
+        "iou": 0.1576712725694522,
+        "cor": 0.002564102564102564,
+        "cor_lbl": 0.0,
+        "n": 780
+      }
+    },
+    "per_label": {
+      "invention": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 1225
+      },
+      "mischaracterization": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 1358
+      },
+      "OCR": {
+        "iou": 0.006491021234871238,
+        "cor": 0.0006622516556291391,
+        "n_records_with_label": 3020
+      },
+      "miscounting": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 359
+      },
+      "other": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 255
+      }
+    }
+  },
+  "miscounting": {
+    "n": 3020,
+    "overall": {
+      "iou": 0.18380638225332996,
+      "cor": 0.002317880794701987,
+      "cor_lbl": 0.00016556291390728477
+    },
+    "per_language": {
+      "en": {
+        "iou": 0.19174723812608038,
+        "cor": 0.0027434842249657062,
+        "cor_lbl": 0.0,
+        "n": 729
+      },
+      "fr": {
+        "iou": 0.22149651448678334,
+        "cor": 0.0,
+        "cor_lbl": 0.0,
+        "n": 754
+      },
+      "it": {
+        "iou": 0.1655476529510391,
+        "cor": 0.003963011889035667,
+        "cor_lbl": 0.0006605019815059445,
+        "n": 757
+      },
+      "zh": {
+        "iou": 0.1576712725694522,
+        "cor": 0.002564102564102564,
+        "cor_lbl": 0.0,
+        "n": 780
+      }
+    },
+    "per_label": {
+      "invention": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 1225
+      },
+      "mischaracterization": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 1358
+      },
+      "OCR": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 179
+      },
+      "miscounting": {
+        "iou": 0.007303204803373914,
+        "cor": 0.00033112582781456954,
+        "n_records_with_label": 3020
+      },
+      "other": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 255
+      }
+    }
+  },
+  "other": {
+    "n": 3020,
+    "overall": {
+      "iou": 0.18380638225332996,
+      "cor": 0.002317880794701987,
+      "cor_lbl": 0.0011589403973509935
+    },
+    "per_language": {
+      "en": {
+        "iou": 0.19174723812608038,
+        "cor": 0.0027434842249657062,
+        "cor_lbl": 0.0013717421124828531,
+        "n": 729
+      },
+      "fr": {
+        "iou": 0.22149651448678334,
+        "cor": 0.0,
+        "cor_lbl": 0.0,
+        "n": 754
+      },
+      "it": {
+        "iou": 0.1655476529510391,
+        "cor": 0.003963011889035667,
+        "cor_lbl": 0.0019815059445178335,
+        "n": 757
+      },
+      "zh": {
+        "iou": 0.1576712725694522,
+        "cor": 0.002564102564102564,
+        "cor_lbl": 0.001282051282051282,
+        "n": 780
+      }
+    },
+    "per_label": {
+      "invention": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 1225
+      },
+      "mischaracterization": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 1358
+      },
+      "OCR": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 179
+      },
+      "miscounting": {
+        "iou": 0.0,
+        "cor": 0.0,
+        "n_records_with_label": 359
+      },
+      "other": {
+        "iou": 0.023245337580499795,
+        "cor": 0.0013245033112582781,
+        "n_records_with_label": 3020
+      }
+    }
+  }
+}

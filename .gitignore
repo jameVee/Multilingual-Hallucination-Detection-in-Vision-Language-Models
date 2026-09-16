@@ -1,0 +1,20 @@
+# Excluded per request: paper, thesis proposal, data, images, docs site
+/paper/
+/thesis proposal/
+/data/
+/docs/
+/shroom-vis-images/
+
+# Trained model weights -- too large for a plain git push (167MB each,
+# over GitHub's 100MB hard limit) and not needed to run the code; the
+# code that produced them is still tracked.
+solutions/*/checkpoint/
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# OS cruft
+.DS_Store
+Thumbs.db
