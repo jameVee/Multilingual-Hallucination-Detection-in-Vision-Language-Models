@@ -45,8 +45,18 @@ repo root (`Multilingual-Hallucination-Detection-in-Vision-Language-Models/`):
 ```bash
 curl -L -o /tmp/shroom-data.zip "https://drive.google.com/uc?export=download&id=1peJu1P79J_JsthDySdXj_B-kVuOyYWi-"
 
-pip install -q gdown   # plain curl does NOT work for the images archive -- see below
-gdown "https://drive.google.com/uc?id=1Cpb2A8hUMl3_tPSIDPLIDn5MP7nTwKl-" -O /tmp/shroom-images.tar.gz
+# Images archive is 2.47GB -- Drive gates anything this size behind a
+# click-through "can't scan for viruses" confirmation page that plain curl
+# can't get past on its own (see explanation below). This extracts that
+# page's confirm token and re-requests with it -- no extra tools needed,
+# unlike gdown (which needs `pip install` and hit "externally-managed-
+# environment" on nlp2's system Python -- this avoids that entirely).
+IMG_ID="1Cpb2A8hUMl3_tPSIDPLIDn5MP7nTwKl-"
+curl -sL "https://drive.google.com/uc?export=download&id=${IMG_ID}" -o /tmp/confirm_page.html
+UUID=$(grep -oE 'name="uuid" value="[^"]*"' /tmp/confirm_page.html | sed -E 's/.*value="([^"]*)"/\1/')
+curl -L "https://drive.usercontent.google.com/download?id=${IMG_ID}&export=download&confirm=t&uuid=${UUID}" \
+  -o /tmp/shroom-images.tar.gz
+rm /tmp/confirm_page.html
 
 unzip /tmp/shroom-data.zip
 tar -xzf /tmp/shroom-images.tar.gz
@@ -61,19 +71,24 @@ this file specifically — verified end-to-end: it 303-redirects to a real
 `application/octet-stream` download and inflates to a valid
 `data/{train,val,test}.jsonl` zip (14.7MB uncompressed).
 
-**On the images link — this one needs `gdown`, plain `curl` genuinely does
-not work here.** Tried the same `uc?export=download` form first: it
-returns HTTP 200 with a *"Google Drive - Virus scan warning"* HTML page
-instead of the file — Drive can't scan archives past a certain size (this
-one is 2.47GB) and gates the download behind a click-through confirmation
-that a bare `curl -L` can't get past, unlike the small data.zip above.
-`gdown` (a small, purpose-built tool — `pip install gdown`, works fine
-outside the venv since it's just a download utility, not a project
-dependency) automates exactly that confirmation step; verified with a
-partial download that it resolves to a real `confirm=t&uuid=...` URL and
-streams genuine gzip bytes (`\x1f\x8b` magic number), not HTML. Expect the
-2.47GB download itself to take a while depending on nlp2's link speed —
-run it inside `tmux` (section 5 below) if it's going to take more than a
+**On the images link**: the same `uc?export=download` form that works for
+the small data.zip returns a *"Google Drive - Virus scan warning"* HTML
+page for this one instead — Drive can't scan archives past a certain size
+(this one is 2.47GB) and gates the download behind a click-through
+confirmation. That page is a real HTML `<form>` whose hidden inputs
+(`id`, `export=download`, `confirm=t`, and a fresh `uuid` generated per
+request) point at the actual file, hosted at a different subdomain
+(`drive.usercontent.google.com/download`) — the two-step command above
+just extracts that `uuid` with `grep`/`sed` and replays the form as a
+second `curl` request. Verified against this exact file with a partial
+byte-range request: the response starts with the real gzip magic bytes
+(`1f 8b 08 00`), not HTML. This needs no extra tools (works around the
+`pip install gdown` → "externally-managed-environment" error nlp2's
+system Python throws — `gdown` remains a fine alternative if you'd rather
+install it *inside* the venv from section 3, or if Drive ever changes this
+confirmation flow again and the scraping above stops matching it). Expect
+the 2.47GB download itself to take a while depending on nlp2's link speed
+— run it inside `tmux` (section 5 below) if it's going to take more than a
 few minutes.
 
 If a Drive link like this one is ever swapped out again: a link that
