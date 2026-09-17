@@ -204,39 +204,51 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 python run_pipeline.py --smoke_test --gpu_index 1
 
 tmux new -s sol03
-python run_pipeline.py --gpu_index 1 --epochs 2 --grad_accum 8 --save_steps 250 --resume --max_seq_len 3072
+python run_pipeline.py --gpu_index 1 --epochs 2 --grad_accum 8 --save_steps 250 --resume
 # Ctrl+B, D once it's running
 ```
-No `--skip_llm` needed (hardcoded on already) and no `--skip_ocr_extract`
-needed either — `generate_synthetic.py` reuses the cloned `ocr_cache.json`
-automatically since it already exists at that path. This is the one cell
-of the `r_max` × LLM-assisted-injection ablation the original shared-task
-submission never trained (`paper/main.tex`'s Limitations section) — see
-`solutions/03_vlm_lora_synthetic_augmented/README.md` for the full
-rationale.
+No `--max_seq_len` override, on purpose — see the OOM note right below for
+why the default (4096, same as every other solution) is confirmed fine
+here. No `--skip_llm` needed (hardcoded on already) and no
+`--skip_ocr_extract` needed either — `generate_synthetic.py` reuses the
+cloned `ocr_cache.json` automatically since it already exists at that path.
+This is the one cell of the `r_max` × LLM-assisted-injection ablation the
+original shared-task submission never trained (`paper/main.tex`'s
+Limitations section) — see `solutions/03_vlm_lora_synthetic_augmented/
+README.md` for the full rationale.
 
-**Known CUDA OOM risk on 24GB cards, hit for real on this run** — `--gpu_index 1`
-above is deliberate, not a typo for `0`: a real nlp2 run of this exact
-solution OOM'd after ~5 minutes with `--gpu_index 0`
-(`torch.OutOfMemoryError`, 21.91 GiB used by the training process alone,
-1.65 GiB free on a 23.56 GiB card — the arithmetic rules out another job
-sharing GPU 0 at the time; this process alone used nearly the whole card).
-Two compounding, already-documented causes, both addressed in the command
-above:
-- `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` was missing (only
-  ever set inside the Colab notebooks, never in the scripts themselves —
-  the OOM message's own suggested fix, and it reduces the "reserved but
-  unallocated" fragmentation waste, which was 5.67 GiB on the failed run).
-- `train_lora.py`'s own docstring (around `--max_seq_len`) documents this
-  *exact* failure signature happening before, on a 40GB Colab A100: "a run
-  stable for 726 steps suddenly needed to allocate 25GB more for one
-  attention op, almost certainly from one unusually long response (e.g.
-  an `inject_repetition_loop`-generated 'other' example)". Solutions
-  03-06 all share this injection method, so the same risk applies to all
-  of them on 24GB, just with less warning before it hits than it had on
-  the A100. `--max_seq_len 3072` (down from the 4096 default) lowers the
-  worst-case sequence length this can spike on; drop further (e.g. `2048`)
-  or add `--max_pixels 401408` if it still OOMs.
+**Known CUDA OOM risk on 24GB cards — hit for real once, now fixed and
+verified, not just theorized.** `--gpu_index 1` above is deliberate, not a
+typo for `0`: an early nlp2 attempt at this exact solution OOM'd after ~5
+minutes with `--gpu_index 0` (`torch.OutOfMemoryError`, 21.91 GiB used by
+the training process alone, 1.65 GiB free on a 23.56 GiB card — the
+arithmetic rules out another job sharing GPU 0 at the time; this process
+alone used nearly the whole card). Root cause: `PYTORCH_CUDA_ALLOC_CONF=
+expandable_segments:True` was missing (only ever set inside the Colab
+notebooks, never in the scripts themselves — the OOM message's own
+suggested fix, and it reduces CUDA memory fragmentation, "reserved but
+unallocated" memory PyTorch holds but isn't using, which was 5.67 GiB on
+the failed run). **Confirmed by directly testing both configurations
+side by side**: with the env var set, `--max_seq_len 4096` (the default,
+used above) trained through the exact point that killed the earlier
+attempt with no OOM — so the env var alone was the actual fix, not a
+smaller `--max_seq_len`.
+
+That said, `train_lora.py`'s own docstring (around `--max_seq_len`)
+documents this *exact* failure signature happening once before too, on a
+40GB Colab A100: "a run stable for 726 steps suddenly needed to allocate
+25GB more for one attention op, almost certainly from one unusually long
+response (e.g. an `inject_repetition_loop`-generated 'other' example)."
+Solutions 03-06 share that injection method, so if this recurs on a
+future run (a different random seed, a different solution's dataset),
+`--max_seq_len 3072` (skips the small number of pathologically long
+responses outright rather than just hoping fragmentation reduction is
+enough) is the documented fallback — verified negligible impact on the
+actual training data when tried here: under 0.02% of examples in a
+same-method augmented set were anywhere near that boundary, essentially
+all of them exactly the degenerate repetition-loop artifacts this guard
+exists to catch. Drop `--max_pixels` too (e.g. `401408`) if even that
+isn't enough.
 
 If a run does OOM anyway, re-launching the exact same command is safe —
 `--resume` picks up from the last `--save_steps 250` checkpoint rather
@@ -257,13 +269,10 @@ all 3 seeds, isolating pure training-seed variance from synthetic-
 generation randomness. Output lands in `<checkpoint_dir>_seed<seed>/`, so
 seeds and the original default-seed run (from Colab) never collide.
 
-`--max_seq_len 3072` on the two `sol05-*` commands (not `sol02-*`) for the
-same reason as section 6 — solution 05's `train_augmented.jsonl` contains
-the same heuristic-injection `other`-class examples that OOM'd solution 03;
-the real-data baseline (`data/train.jsonl`, no synthetic amplification of
-rare long responses) is markedly less exposed to this, so it's left at the
-default there. `export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`
-once per shell (section 3) applies to all four of these regardless.
+`export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` once per shell
+(section 3) before any of these — confirmed sufficient on its own for this
+model/dataset/hardware combination (section 6), so none of the four
+commands below need a `--max_seq_len` override.
 
 ```bash
 # round 1 -- one baseline seed + one tuned seed in parallel on the two free GPUs
@@ -276,8 +285,7 @@ python solutions/common/run_seed_variant.py \
 tmux new -s sol05-seed123
 python solutions/common/run_seed_variant.py \
   --train_file solutions/05_vlm_lora_synthetic_tuned/train_augmented.jsonl \
-  --checkpoint_dir solutions/05_vlm_lora_synthetic_tuned/checkpoint --seed 123 --gpu_index 2 \
-  --max_seq_len 3072
+  --checkpoint_dir solutions/05_vlm_lora_synthetic_tuned/checkpoint --seed 123 --gpu_index 2
 # Ctrl+B, D
 
 # round 2 -- once round 1 finishes and frees both GPUs (check with tmux ls / nvidia-smi)
@@ -290,8 +298,7 @@ python solutions/common/run_seed_variant.py \
 tmux new -s sol05-seed2024
 python solutions/common/run_seed_variant.py \
   --train_file solutions/05_vlm_lora_synthetic_tuned/train_augmented.jsonl \
-  --checkpoint_dir solutions/05_vlm_lora_synthetic_tuned/checkpoint --seed 2024 --gpu_index 2 \
-  --max_seq_len 3072
+  --checkpoint_dir solutions/05_vlm_lora_synthetic_tuned/checkpoint --seed 2024 --gpu_index 2
 # Ctrl+B, D
 ```
 `tmux ls` shows which sessions are still running; each finishes
@@ -302,16 +309,16 @@ this requires staying attached or connected between rounds.
 
 Not part of Aim 1, but here for completeness if you ever need to rerun or
 extend one of these on nlp2. Default model everywhere is
-`Qwen/Qwen3-VL-8B-Instruct` (dense, 4-bit), and the *baseline* (solution 02,
-real data only, no long synthetic `other`-class responses) fits nlp2's 24GB
-3090s comfortably with no extra flags. **The synthetic-augmented ones
-(03-06) are less safe than this section originally claimed** — solution
-03 actually OOM'd on nlp2 (section 6 has the full diagnosis); set
-`PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` and consider
-`--max_seq_len 3072` for 04/05/06 too, not just 03, since they share the
-same injection method that triggers it. Pass `--model_id
-Qwen/Qwen3-VL-30B-A3B-Instruct` for the bigger sparse-MoE alternative on
-any command below if you want it (expect it to need those same flags too).
+`Qwen/Qwen3-VL-8B-Instruct` (dense, 4-bit). **Always set
+`PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` first** (section 3) —
+solution 03 genuinely OOM'd on nlp2 without it (section 6 has the full
+diagnosis and the fix confirmed by a direct side-by-side test), so treat
+it as required on this hardware, not optional. With it set, the default
+`--max_seq_len` (4096) is confirmed fine — no override needed below for
+04 or 06 either; `--max_seq_len 3072` stays documented in section 6 only
+as a fallback if a *different* run ever OOMs despite the env var. Pass
+`--model_id Qwen/Qwen3-VL-30B-A3B-Instruct` for the bigger sparse-MoE
+alternative on any command below if you want it.
 
 **Verification level differs by solution.** Solutions 02, 04, 05, and 06
 already have a real, complete Colab run each (`val_scores.json` on disk) —
@@ -345,11 +352,12 @@ cd solutions/04_vlm_lora_synthetic_augmented_llm
 export ANTHROPIC_API_KEY=sk-ant-...   # set this yourself; never paste into a chat
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 python run_pipeline.py --smoke_test --gpu_index 1
-python run_pipeline.py --gpu_index 1 --epochs 2 --grad_accum 8 --max_seq_len 3072
+python run_pipeline.py --gpu_index 1 --epochs 2 --grad_accum 8
 ```
 Reuses the cloned `ocr_cache.json` automatically; `llm_synth_cache.json`
 caches API calls incrementally, so an interrupted run resumes instead of
-re-spending budget. Same OOM risk as solution 03 (section 6) — same fix.
+re-spending budget. Same OOM risk as solution 03 without the env var
+(section 6) — same fix, already applied above.
 
 ### 06 — VLM LoRA, synthetic augmented, tuned r_max=3 + LLM (already has a real Colab run)
 
@@ -358,7 +366,7 @@ cd solutions/06_vlm_lora_synthetic_tuned_llm
 export ANTHROPIC_API_KEY=sk-ant-...
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 python run_pipeline.py --smoke_test --gpu_index 1
-python run_pipeline.py --gpu_index 1 --epochs 2 --grad_accum 8 --max_seq_len 3072
+python run_pipeline.py --gpu_index 1 --epochs 2 --grad_accum 8
 ```
 
 ## 9. Comparing results
