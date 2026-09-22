@@ -276,16 +276,35 @@ commands below need a `--max_seq_len` override.
 
 **Run these sequentially, not in parallel — a real incident, not just
 caution.** An earlier version of this doc suggested running one baseline
-seed and one tuned seed at the same time on the two free GPUs, reasoning
-only about *GPU* VRAM isolation (`--gpu_index`). It didn't account for
-*system* RAM: each process loads the full 8B-parameter model into CPU
-memory before quantizing it onto the GPU, and two of those at once
-genuinely took an nlp2 run down hard enough to need a full server restart
-(not a clean Python crash — check `free -h` for available RAM, and `dmesg
--T | grep -i "out of memory\|killed process"` / `journalctl -k --since
-today | grep -i oom` for OOM-killer activity, if you want to confirm this
-was the cause before trusting it). Until system RAM headroom is actually
-confirmed, run one job at a time:
+seed and one tuned seed at the same time on the two free GPUs. That
+crashed nlp2 hard enough to need a full server restart (not a clean Python
+failure). The first theory here was system RAM exhaustion (each process
+loads the full 8B model into CPU memory before quantizing onto the GPU) —
+**ruled out**: `free -h` on nlp2 showed 1.0Ti total RAM, only ~11GB used.
+Current best explanation: **combined GPU power draw**. Two RTX 3090s under
+full simultaneous load pull ~350W+ each — add whatever else is running on
+the machine (this is a shared box; another user's job was occupying GPU 0
+at one point) and total draw can plausibly exceed what the server's PSU or
+its circuit can deliver, which would cut power hard rather than fail
+gracefully. Mitigation, if you have `sudo`:
+```bash
+for i in 0 1 2; do sudo nvidia-smi -i $i -pl 300; done   # cap each GPU at 300W (stock ~350W)
+nvidia-smi --query-gpu=index,power.limit --format=csv     # verify it took
+```
+Doesn't persist across reboots — reapply after any restart, or ask nlp2's
+admin to make it persistent. This is a reasoned lead based on ruling out
+RAM, not a confirmed root cause (a regular user account can't read
+`dmesg`/kernel `journalctl` on nlp2 to verify directly, per the
+"Operation not permitted" you'll get trying). Log actual power draw during
+your next run so there's real evidence either way:
+```bash
+nvidia-smi --query-gpu=timestamp,index,power.draw,power.limit,utilization.gpu,memory.used \
+  --format=csv -l 5 > ~/power_log.csv &
+```
+Given the cost of another crash, treat the power limit as a protective
+measure layered on top of sequential execution — not a green light back to
+parallel until you've actually seen a run through with the log above and
+confirmed draw stayed comfortably under the cap:
 
 ```bash
 tmux new -s sol02-seed123
