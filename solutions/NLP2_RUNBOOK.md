@@ -274,13 +274,25 @@ seeds and the original default-seed run (from Colab) never collide.
 model/dataset/hardware combination (section 6), so none of the four
 commands below need a `--max_seq_len` override.
 
+**Run these sequentially, not in parallel — a real incident, not just
+caution.** An earlier version of this doc suggested running one baseline
+seed and one tuned seed at the same time on the two free GPUs, reasoning
+only about *GPU* VRAM isolation (`--gpu_index`). It didn't account for
+*system* RAM: each process loads the full 8B-parameter model into CPU
+memory before quantizing it onto the GPU, and two of those at once
+genuinely took an nlp2 run down hard enough to need a full server restart
+(not a clean Python crash — check `free -h` for available RAM, and `dmesg
+-T | grep -i "out of memory\|killed process"` / `journalctl -k --since
+today | grep -i oom` for OOM-killer activity, if you want to confirm this
+was the cause before trusting it). Until system RAM headroom is actually
+confirmed, run one job at a time:
+
 ```bash
-# round 1 -- one baseline seed + one tuned seed in parallel on the two free GPUs
 tmux new -s sol02-seed123
 python solutions/common/run_seed_variant.py \
   --train_file data/train.jsonl \
   --checkpoint_dir solutions/02_vlm_lora_real_data/checkpoint --seed 123 --gpu_index 1
-# Ctrl+B, D
+# Ctrl+B, D -- wait for this to finish (tmux ls / check for val_scores.json) before starting the next
 
 tmux new -s sol05-seed123
 python solutions/common/run_seed_variant.py \
@@ -288,7 +300,6 @@ python solutions/common/run_seed_variant.py \
   --checkpoint_dir solutions/05_vlm_lora_synthetic_tuned/checkpoint --seed 123 --gpu_index 2
 # Ctrl+B, D
 
-# round 2 -- once round 1 finishes and frees both GPUs (check with tmux ls / nvidia-smi)
 tmux new -s sol02-seed2024
 python solutions/common/run_seed_variant.py \
   --train_file data/train.jsonl \
@@ -301,9 +312,13 @@ python solutions/common/run_seed_variant.py \
   --checkpoint_dir solutions/05_vlm_lora_synthetic_tuned/checkpoint --seed 2024 --gpu_index 2
 # Ctrl+B, D
 ```
-`tmux ls` shows which sessions are still running; each finishes
-independently onto disk (`checkpoint_seed<N>/val_scores.json`), so none of
-this requires staying attached or connected between rounds.
+Each finishes independently onto disk (`checkpoint_seed<N>/val_scores.json`),
+so none of this requires staying attached between runs — just don't
+*launch* the next one until the previous process has actually exited.
+Once `free -h` confirms there's genuinely enough spare RAM for two
+concurrent model loads, running two at a time on separate GPUs (as
+originally suggested) goes back to being safe and roughly halves the
+wall-clock time for this phase.
 
 ## 8. Reference: every other solution
 
