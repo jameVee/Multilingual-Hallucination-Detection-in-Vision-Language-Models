@@ -306,29 +306,37 @@ measure layered on top of sequential execution — not a green light back to
 parallel until you've actually seen a run through with the log above and
 confirmed draw stayed comfortably under the cap:
 
+`--resume` on every command below, always — safe even on a first attempt
+(documented no-op on a fresh/empty run directory in `train_lora.py`'s own
+`--resume` help text), and without it a rerun after any interruption
+silently discards whatever checkpoint progress already exists and starts
+over from scratch rather than continuing (`run_seed_variant.py` only adds
+it to the underlying `train_lora.py` call if you pass it — it's not
+automatic just because a checkpoint happens to be sitting on disk).
+
 ```bash
 tmux new -s sol02-seed123
 python solutions/common/run_seed_variant.py \
   --train_file data/train.jsonl \
-  --checkpoint_dir solutions/02_vlm_lora_real_data/checkpoint --seed 123 --gpu_index 1
+  --checkpoint_dir solutions/02_vlm_lora_real_data/checkpoint --seed 123 --gpu_index 1 --resume
 # Ctrl+B, D -- wait for this to finish (tmux ls / check for val_scores.json) before starting the next
 
 tmux new -s sol05-seed123
 python solutions/common/run_seed_variant.py \
   --train_file solutions/05_vlm_lora_synthetic_tuned/train_augmented.jsonl \
-  --checkpoint_dir solutions/05_vlm_lora_synthetic_tuned/checkpoint --seed 123 --gpu_index 2
+  --checkpoint_dir solutions/05_vlm_lora_synthetic_tuned/checkpoint --seed 123 --gpu_index 2 --resume
 # Ctrl+B, D
 
 tmux new -s sol02-seed2024
 python solutions/common/run_seed_variant.py \
   --train_file data/train.jsonl \
-  --checkpoint_dir solutions/02_vlm_lora_real_data/checkpoint --seed 2024 --gpu_index 1
+  --checkpoint_dir solutions/02_vlm_lora_real_data/checkpoint --seed 2024 --gpu_index 1 --resume
 # Ctrl+B, D
 
 tmux new -s sol05-seed2024
 python solutions/common/run_seed_variant.py \
   --train_file solutions/05_vlm_lora_synthetic_tuned/train_augmented.jsonl \
-  --checkpoint_dir solutions/05_vlm_lora_synthetic_tuned/checkpoint --seed 2024 --gpu_index 2
+  --checkpoint_dir solutions/05_vlm_lora_synthetic_tuned/checkpoint --seed 2024 --gpu_index 2 --resume
 # Ctrl+B, D
 ```
 Each finishes independently onto disk (`checkpoint_seed<N>/val_scores.json`),
