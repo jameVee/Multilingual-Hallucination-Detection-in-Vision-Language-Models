@@ -1,0 +1,72 @@
+{
+  "invention": {
+    "n_natural": 1500,
+    "n_synthetic": 150,
+    "auc_mean": 0.7270333333333333,
+    "auc_std": 0.040469796693885764,
+    "coefs": {
+      "length": -1.7501809674920772,
+      "alpha_ratio": -1.507886667447765,
+      "digit_ratio": -3.578856645724008,
+      "space_ratio": -1.0350713922716026,
+      "word_count": 2.4228846869054266,
+      "max_trigram_jaccard": -0.607656024188056
+    }
+  },
+  "mischaracterization": {
+    "n_natural": 1500,
+    "n_synthetic": 150,
+    "auc_mean": 0.8593777777777778,
+    "auc_std": 0.0341790745310997,
+    "coefs": {
+      "length": -6.1050853370907605,
+      "alpha_ratio": 1.7045444690066196,
+      "digit_ratio": -0.06069810101371153,
+      "space_ratio": -1.302941235751837,
+      "word_count": -0.3148972798589392,
+      "max_trigram_jaccard": 0.1320632490103283
+    }
+  },
+  "OCR": {
+    "n_natural": 984,
+    "n_synthetic": 450,
+    "auc_mean": 0.7256140002532316,
+    "auc_std": 0.031082299931971487,
+    "coefs": {
+      "length": 0.28294590125840735,
+      "alpha_ratio": 0.5274536623292859,
+      "digit_ratio": 0.5904885447985179,
+      "space_ratio": -0.08657812041112233,
+      "word_count": -0.4044539537093093,
+      "max_trigram_jaccard": -1.2253754571741735
+    }
+  },
+  "miscounting": {
+    "n_natural": 1500,
+    "n_synthetic": 450,
+    "auc_mean": 0.7416888888888888,
+    "auc_std": 0.021392700958995054,
+    "coefs": {
+      "length": 0.04853976310802418,
+      "alpha_ratio": 2.066841796800557,
+      "digit_ratio": 1.7551498142157447,
+      "space_ratio": -2.4464362917709073,
+      "word_count": -0.4913560619570561,
+      "max_trigram_jaccard": -0.7579733365087936
+    }
+  },
+  "other": {
+    "n_natural": 1180,
+    "n_synthetic": 450,
+    "auc_mean": 0.8278013182674201,
+    "auc_std": 0.02975575251538934,
+    "coefs": {
+      "length": 1.799692632547708,
+      "alpha_ratio": 0.4474771860675225,
+      "digit_ratio": -2.1935807518213193,
+      "space_ratio": 1.1387161505926315,
+      "word_count": -0.6560015115538477,
+      "max_trigram_jaccard": -1.5642697841551072
+    }
+  }
+}
