@@ -50,17 +50,61 @@ penalizes spurious extra labels that raw `Cor` doesn't.
 | 05 | 0.3961 / 0.4365 | 0.4584 / 0.4773 | 0.4520 / 0.4873 | 0.5221 / 0.5473 |
 | 06 | 0.4136 / 0.4512 | 0.4484 / 0.4742 | 0.4402 / 0.4777 | 0.5169 / 0.5425 |
 
+## Multi-seed variance (Aim 1 Phase 3 — baseline vs. tuned, 3 seeds each)
+
+The single-seed numbers above understate how much these configs move
+seed-to-seed. Aggregating seeds 42 (original), 123, and 2024 for solutions
+02 and 05 (`solutions/common/run_seed_variant.py` outputs):
+
+| Metric | 02 mean ± std | 05 mean ± std | gap (05-02) | gap / avg seed-std |
+|---|---|---|---|---|
+| Span IoU | 0.4446 ± 0.0072 | 0.4566 ± 0.0031 | +0.0120 | **2.3x** |
+| Cor (overall) | 0.4785 ± 0.0083 | 0.4880 ± 0.0024 | +0.0094 | **1.8x** |
+| Cor+Lbl | 0.4219 ± 0.0056 | 0.4206 ± 0.0011 | **-0.0012** | **-0.4x** |
+
+**This overturns the single-seed conclusion below it, and confirms exactly
+the caveat the paper itself flagged** ("tuned's gain over the baseline is
+not significant... this bootstrap doesn't capture training-seed variance").
+The apparent "05 beats baseline on Cor+Lbl" result was an artifact of
+comparing single, arbitrary seed-42 runs — baseline's seed-42 Cor+Lbl
+(0.4172) happened to be its *worst* of the three seeds (123 and 2024 both
+exceeded it), while solution 05 was unusually stable seed-to-seed
+(std=0.0011 vs. baseline's 0.0056). Averaged properly, baseline and tuned
+are statistically indistinguishable on Cor+Lbl (gap smaller than the
+noise), even though **IoU and raw Cor gains for solution 05 are real and
+robust** (gap clearly exceeds seed noise on both).
+
+Per-label Cor across the same 3 seeds tells the more decision-relevant
+story — which categories does tuned augmentation actually, robustly help
+or hurt, once seed noise is accounted for:
+
+| Category | 02 mean ± std | 05 mean ± std | Robust? |
+|---|---|---|---|
+| OCR | 0.3635 ± 0.0085 | 0.3191 ± 0.0183 | **Robustly hurt** — ranges barely overlap, baseline wins all 3 seeds |
+| mischaracterization | 0.1227 ± 0.0044 | 0.1414 ± 0.0061 | **Robustly helped** — tuned wins all 3 seeds, non-overlapping |
+| other | 0.0414 ± 0.0122 | 0.0746 ± 0.0083 | **Robustly helped** — tuned wins all 3 seeds |
+| miscounting | 0.4038 ± 0.0191 | 0.4175 ± 0.0035 | Likely helped, and far more *stable* under tuning |
+| invention | 0.2093 ± 0.0080 | 0.2191 ± 0.0051 | Modest edge, ranges overlap |
+
+**Takeaway for Aim 2**: the paper's OCR-degradation finding isn't a
+single-seed fluke — it's the most seed-robust pattern in this whole
+dataset (baseline beats tuned on OCR in all 3 seeds, non-overlapping
+ranges). That's the strongest possible motivation for Aim 2's synthetic-
+vs-natural-span classifier: if synthetic OCR spans are lexically/
+structurally distinguishable from natural ones in a way the model
+actually picks up on and fails to generalize from, this is where it
+should show up most clearly.
+
 ## Recommendation
 
-**Solution 05 (tuned augmentation, r_max=3, no LLM) is the standout**: best
-IoU, best Cor+Lbl, and essentially tied for best raw Cor, all
-simultaneously — the only config that clearly beats the real-data baseline
-(02) on Cor+Lbl (0.4215 vs 0.4172) rather than trading it off for a raw-Cor
-gain. This matches the paper's own reported numbers for this exact
-checkpoint (IoU=0.458, Cor+Lbl=0.422) almost exactly, so treat 05 as the
-config to carry forward for any downstream use (e.g. a final test-set
-submission) unless the multi-seed reruns (Aim 1) show this margin isn't
-stable across seeds.
+**Solution 05's headline "beats baseline" claim does not survive seed
+variance on the metric that matters most (Cor+Lbl)** — see above. It
+remains the best config on IoU and raw Cor, robustly so, and per-label it
+robustly helps `mischaracterization`/`other`/`miscounting` — just don't
+claim it beats the baseline overall without immediately caveating Cor+Lbl.
+Treat 05 as the strongest *available* config for downstream use (e.g. a
+test-set submission) on the strength of its label-agnostic and per-label
+gains, not on an overall-Cor+Lbl win that the single-seed table implied.
 
 **Solution 03 (the newly-trained missing ablation cell) behaves exactly as
 expected**: nearly identical overall numbers to solution 04 (same r_max=8,
