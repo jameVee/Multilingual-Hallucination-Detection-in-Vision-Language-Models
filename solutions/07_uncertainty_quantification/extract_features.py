@@ -241,11 +241,18 @@ class AttentionLookbackCollector:
             resp_mask[self.prompt_len:seq_len] = True
 
             image_mass = (resp_rows * image_mask).sum(dim=-1)  # (heads, n_resp)
-            # "prior response tokens" = response positions strictly before the query itself
-            resp_prior_mass = torch.zeros_like(image_mass)
-            for i in range(resp_rows.shape[1]):
-                col_cutoff = self.prompt_len + i  # exclude the query token itself and anything after
-                resp_prior_mass[:, i] = resp_rows[:, i, self.prompt_len:col_cutoff].sum(dim=-1)
+            # "prior response tokens" = response positions strictly before the query itself.
+            # Vectorized via a strict lower-triangular mask over the response x response
+            # submatrix instead of a per-token Python loop -- the loop version issued one
+            # tiny GPU kernel per response token per layer (e.g. ~300 tokens x ~36 layers =
+            # ~10,800 launches per record), which is latency- not compute-bound and was the
+            # single biggest avoidable cost in this hook.
+            n_resp = resp_rows.shape[1]
+            resp_cols = resp_rows[:, :, self.prompt_len:self.prompt_len + n_resp]  # (heads, n_resp, n_resp)
+            strict_lower = torch.tril(
+                torch.ones(n_resp, n_resp, dtype=torch.bool, device=resp_cols.device), diagonal=-1
+            )
+            resp_prior_mass = (resp_cols * strict_lower).sum(dim=-1)  # (heads, n_resp)
             denom = image_mass + resp_prior_mass
             ratio = torch.where(denom > 1e-8, image_mass / denom, torch.zeros_like(denom))
             self.per_layer_ratios[name] = ratio.transpose(0, 1).to(torch.float32).cpu()  # (n_resp, heads)
