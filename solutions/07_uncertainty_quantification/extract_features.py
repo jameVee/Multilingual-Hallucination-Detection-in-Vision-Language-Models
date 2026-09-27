@@ -294,11 +294,18 @@ class HiddenStateCollector:
         if verbose:
             print(f"  [HiddenStateCollector] found {len(decoder_layers)} decoder layers total; "
                   f"hooking indices {layer_indices}")
-        for idx in layer_indices:
-            if idx < 0:
-                idx = len(decoder_layers) + idx
-            name, module = decoder_layers[idx]
-            self.handles.append(module.register_forward_hook(self._make_hook(idx)))
+        for requested_idx in layer_indices:
+            # `captured` is keyed by the ORIGINAL requested index (e.g. -1), matching how
+            # every caller (process_record, main's hidden_layers/hidden_shard/save_kwargs)
+            # refers to it -- resolving negative indices only to look up the right module,
+            # NOT to relabel the key, since a prior version reassigned the loop variable
+            # itself and silently stored under the resolved positive index (e.g. 35)
+            # instead, so every `.get(-1, ...)` lookup missed and fell back to a bare
+            # numpy zeros() placeholder that then crashed on the later `.numpy()` call
+            # (caught by an actual --dry_run run on nlp2, not by anything testable locally).
+            resolved_idx = requested_idx if requested_idx >= 0 else len(decoder_layers) + requested_idx
+            name, module = decoder_layers[resolved_idx]
+            self.handles.append(module.register_forward_hook(self._make_hook(requested_idx)))
 
     def _make_hook(self, idx):
         def hook(module, inputs, output):
@@ -370,7 +377,11 @@ def process_record(record, model, processor, device, image_token_id, hidden_laye
     lookback_feats, lookback_cols = attn_collector.stacked_features()
     n_resp = len(response_ids_from_full_seq)
 
-    hidden_feats = {idx: hidden_collector.captured.get(idx, np.zeros((n_resp, 0), dtype=np.float32))
+    # Defensive fallback (should not trigger now that HiddenStateCollector keys `captured`
+    # by the original requested index -- see its docstring): if a requested layer's hook
+    # never fired for some other reason, use an empty-but-correctly-typed torch tensor
+    # instead of a bare numpy array, so the `.numpy()` call below can't crash on it either way.
+    hidden_feats = {idx: hidden_collector.captured.get(idx, torch.zeros((n_resp, 0), dtype=torch.float32))
                     for idx in hidden_layers}
 
     return {
