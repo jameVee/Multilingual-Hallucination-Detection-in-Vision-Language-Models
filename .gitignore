@@ -10,6 +10,15 @@
 # code that produced them is still tracked.
 solutions/*/checkpoint/
 
+# Aim 3 (solution 07) raw feature shards -- per-token hidden-state arrays
+# over the full labeled train set are multi-GB uncompressed (n_layers x
+# n_heads lookback floats + full hidden-dim vectors per token, x ~500k+
+# response tokens), the same "too large to git-push" problem as
+# checkpoint/ above but for extracted features instead of trained weights.
+# aim3_auc_grid.json (the actual per-cell AUC results) is NOT excluded --
+# only the intermediate .npz shards are.
+solutions/07_uncertainty_quantification/features/
+
 # Python
 __pycache__/
 *.pyc
