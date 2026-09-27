@@ -155,18 +155,48 @@ def build_plain_conversation(record: dict, image_dir=data_io.IMAGE_DIR):
     return {"messages": messages, "_image_path": str(img_path), "_record": record}
 
 
-def token_char_spans(tokenizer, text: str):
-    """Isolated-substring tokenization of `text` (e.g. record["response"]
-    alone) with character offsets relative to `text` itself -- much
-    simpler than trying to recover offsets from the full chat-templated
-    string. `verify_alignment()` checks this matches the real multimodal
-    sequence's response-token ids before trusting it."""
-    enc = tokenizer(text, add_special_tokens=False, return_offsets_mapping=True)
-    return enc["input_ids"], enc["offset_mapping"]
+def token_char_spans_from_ids(tokenizer, token_ids: list, reference_text: str):
+    """Recovers per-token character offsets into `reference_text` by
+    decoding growing prefixes of `token_ids` -- the ACTUAL ids the model
+    was fed (from the real multimodal sequence), not a re-tokenization of
+    `reference_text` in isolation.
 
+    An earlier version tokenized `record["response"]` alone and compared
+    ITS token ids against the real sequence's response-token ids,
+    rejecting the whole record on any mismatch. On a real run against the
+    real tokenizer (nlp2, Qwen3-VL-8B-Instruct) this rejected 3/3 sample
+    records -- almost certainly a BPE boundary effect at the response's
+    very first token (its true encoding, immediately after the chat
+    template's role-tag/newline, differs from how the same text tokenizes
+    completely on its own), which fails an exact all-tokens-must-match
+    check even though only one token actually differs. Decoding the real
+    ids back to text sidesteps this: it can't disagree with itself.
 
-def verify_alignment(response_ids_from_full_seq, isolated_ids):
-    return list(response_ids_from_full_seq) == list(isolated_ids)
+    Returns (offsets, None) on success, or (None, reconstructed_text) if
+    the decoded text doesn't reconcile with `reference_text` at all (the
+    caller falls back to an approximate proportional split in that case).
+    """
+    if not token_ids:
+        return [], None
+    full_decoded = tokenizer.decode(token_ids, skip_special_tokens=False)
+    shift = 0
+    if full_decoded == reference_text:
+        pass
+    elif full_decoded[:1].isspace() and full_decoded[1:] == reference_text:
+        # Response's first real token's decoded form absorbed a boundary space
+        # that isn't part of the response text itself -- shift every offset
+        # left by that one character rather than treating it as a failure.
+        shift = 1
+    else:
+        return None, full_decoded
+
+    offsets = []
+    prev_len = 0
+    for i in range(1, len(token_ids) + 1):
+        cur_len = len(tokenizer.decode(token_ids[:i], skip_special_tokens=False)) - shift
+        offsets.append((max(0, prev_len), max(0, cur_len)))
+        prev_len = cur_len
+    return offsets, None
 
 
 def label_response_tokens(offsets, labels, label_order=data_io.LABEL_ORDER):
@@ -340,13 +370,18 @@ def process_record(record, model, processor, device, image_token_id, hidden_laye
     input_ids_cpu = full_inputs["input_ids"][0]
     response_ids_from_full_seq = input_ids_cpu[prompt_len:].tolist()
 
-    isolated_ids, offsets = token_char_spans(processor.tokenizer, record["response"])
-    approx_alignment = not verify_alignment(response_ids_from_full_seq, isolated_ids)
+    offsets, mismatch_text = token_char_spans_from_ids(
+        processor.tokenizer, response_ids_from_full_seq, record["response"]
+    )
+    approx_alignment = offsets is None
     if approx_alignment:
         # Degraded fallback: spread offsets evenly across the response length in
         # proportion to token count, rather than crashing. Flagged per-record
         # (see `approx_alignment` in the saved shard) so this can be filtered
         # out of probe training later if it turns out to be common/unreliable.
+        if verbose:
+            print(f"  [alignment] decode mismatch for {record['id']}: "
+                  f"decoded={mismatch_text[:80]!r} vs response={record['response'][:80]!r}")
         n = len(response_ids_from_full_seq)
         resp_len = len(record["response"])
         step = resp_len / max(1, n)
