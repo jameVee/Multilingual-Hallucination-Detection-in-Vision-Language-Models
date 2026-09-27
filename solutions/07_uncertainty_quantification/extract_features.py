@@ -161,42 +161,60 @@ def token_char_spans_from_ids(tokenizer, token_ids: list, reference_text: str):
     was fed (from the real multimodal sequence), not a re-tokenization of
     `reference_text` in isolation.
 
-    An earlier version tokenized `record["response"]` alone and compared
-    ITS token ids against the real sequence's response-token ids,
-    rejecting the whole record on any mismatch. On a real run against the
-    real tokenizer (nlp2, Qwen3-VL-8B-Instruct) this rejected 3/3 sample
-    records -- almost certainly a BPE boundary effect at the response's
-    very first token (its true encoding, immediately after the chat
-    template's role-tag/newline, differs from how the same text tokenizes
-    completely on its own), which fails an exact all-tokens-must-match
-    check even though only one token actually differs. Decoding the real
-    ids back to text sidesteps this: it can't disagree with itself.
+    `token_ids` is everything from the end of the prompt to the end of the
+    tokenized sequence, which is a SUPERSET of the response content: it
+    also includes the chat template's end-of-turn closing tokens (e.g.
+    `<|im_end|>\\n`), confirmed on a real run against Qwen3-VL-8B-
+    Instruct's tokenizer on nlp2 -- decoding the full id list for a short
+    Chinese response came back as `"...吉他。<|im_end|>\\n"` when
+    `reference_text` was just `"...吉他。"`. An earlier version required
+    the full decode to equal `reference_text` exactly, which this trailing
+    suffix always fails, and (separately) tokenizing `reference_text` in
+    isolation and comparing ITS ids against the real ones, which failed a
+    different way (a BPE boundary effect at the very first token). Both
+    failures showed up as `approx_alignment=True` on every single sample
+    record in real testing.
 
-    Returns (offsets, None) on success, or (None, reconstructed_text) if
-    the decoded text doesn't reconcile with `reference_text` at all (the
-    caller falls back to an approximate proportional split in that case).
+    This version instead: (1) tolerates the response's first real token
+    absorbing a one-character leading-space boundary (same as before), and
+    (2) finds exactly how many LEADING tokens are needed to reproduce
+    `reference_text` and drops everything after that as closing-tag/
+    structural tokens -- they were never part of the model's answer and
+    have no business getting an entropy/hidden-state/attention-ratio
+    feature row or a hallucination label at all.
+
+    Returns (offsets, None, n_real_tokens) on success -- `offsets` has
+    exactly `n_real_tokens` entries, and the caller should trim
+    `token_ids` (and every per-token array derived from the same
+    positions) down to `token_ids[:n_real_tokens]`. Returns
+    (None, reconstructed_text, None) if the decoded text doesn't reconcile
+    with `reference_text` at all (caller falls back to an approximate
+    proportional split over the FULL token_ids in that case, unchanged).
     """
     if not token_ids:
-        return [], None
+        return [], None, 0
     full_decoded = tokenizer.decode(token_ids, skip_special_tokens=False)
     shift = 0
-    if full_decoded == reference_text:
-        pass
-    elif full_decoded[:1].isspace() and full_decoded[1:] == reference_text:
-        # Response's first real token's decoded form absorbed a boundary space
-        # that isn't part of the response text itself -- shift every offset
-        # left by that one character rather than treating it as a failure.
+    if full_decoded[:len(reference_text)] == reference_text:
+        shift = 0
+    elif full_decoded[:1].isspace() and full_decoded[1:1 + len(reference_text)] == reference_text:
         shift = 1
     else:
-        return None, full_decoded
+        return None, full_decoded, None
 
+    target_len = shift + len(reference_text)
     offsets = []
     prev_len = 0
+    n_real_tokens = len(token_ids)
     for i in range(1, len(token_ids) + 1):
-        cur_len = len(tokenizer.decode(token_ids[:i], skip_special_tokens=False)) - shift
+        cur_len_raw = len(tokenizer.decode(token_ids[:i], skip_special_tokens=False))
+        cur_len = min(cur_len_raw, target_len) - shift
         offsets.append((max(0, prev_len), max(0, cur_len)))
         prev_len = cur_len
-    return offsets, None
+        if cur_len_raw >= target_len:
+            n_real_tokens = i
+            break
+    return offsets, None, n_real_tokens
 
 
 def label_response_tokens(offsets, labels, label_order=data_io.LABEL_ORDER):
@@ -235,8 +253,9 @@ class AttentionLookbackCollector:
     tree.
     """
 
-    def __init__(self, model, prompt_len: int, image_col_mask: torch.Tensor, verbose=False):
+    def __init__(self, model, prompt_len: int, image_col_mask: torch.Tensor, resp_len: int, verbose=False):
         self.prompt_len = prompt_len
+        self.resp_len = resp_len  # cap query rows to the REAL response tokens, excluding chat-template closing tags
         self.image_col_mask = image_col_mask  # bool tensor, shape (seq_len,), True at image-token columns
         self.per_layer_ratios = {}  # layer_name -> (n_response_tokens, n_heads) float32 CPU tensor
         self.handles = []
@@ -265,10 +284,9 @@ class AttentionLookbackCollector:
             if attn_weights.dim() == 3:
                 attn_weights = attn_weights.unsqueeze(1)  # -> (1, 1, seq_len, seq_len)
             seq_len = attn_weights.shape[-1]
-            resp_rows = attn_weights[0, :, self.prompt_len:seq_len, :]  # (heads, n_resp, seq_len)
+            row_end = self.prompt_len + self.resp_len  # exclude chat-template closing-tag rows entirely
+            resp_rows = attn_weights[0, :, self.prompt_len:row_end, :]  # (heads, n_resp, seq_len)
             image_mask = self.image_col_mask[:seq_len].to(attn_weights.device)
-            resp_mask = torch.zeros(seq_len, dtype=torch.bool, device=attn_weights.device)
-            resp_mask[self.prompt_len:seq_len] = True
 
             image_mass = (resp_rows * image_mask).sum(dim=-1)  # (heads, n_resp)
             # "prior response tokens" = response positions strictly before the query itself.
@@ -315,8 +333,9 @@ class HiddenStateCollector:
     instead of requesting output_hidden_states=True for the whole model
     (which retains every layer at once)."""
 
-    def __init__(self, model, layer_indices: list, prompt_len: int, verbose=False):
+    def __init__(self, model, layer_indices: list, prompt_len: int, resp_len: int, verbose=False):
         self.prompt_len = prompt_len
+        self.resp_len = resp_len  # cap to REAL response tokens, excluding chat-template closing tags
         self.captured = {}  # layer_idx -> (n_resp, hidden) float32 CPU tensor
         self.handles = []
         decoder_layers = [(n, m) for n, m in model.named_modules()
@@ -340,7 +359,8 @@ class HiddenStateCollector:
     def _make_hook(self, idx):
         def hook(module, inputs, output):
             hidden = output[0] if isinstance(output, tuple) else output  # (1, seq_len, hidden)
-            self.captured[idx] = hidden[0, self.prompt_len:, :].detach().to(torch.float32).cpu()
+            row_end = self.prompt_len + self.resp_len
+            self.captured[idx] = hidden[0, self.prompt_len:row_end, :].detach().to(torch.float32).cpu()
             return output
         return hook
 
@@ -368,41 +388,46 @@ def process_record(record, model, processor, device, image_token_id, hidden_laye
         return None  # empty response after tokenization, nothing to score
 
     input_ids_cpu = full_inputs["input_ids"][0]
-    response_ids_from_full_seq = input_ids_cpu[prompt_len:].tolist()
+    # Superset of the real response: also includes the chat template's trailing
+    # end-of-turn closing tokens (e.g. `<|im_end|>\n`) -- token_char_spans_from_ids
+    # figures out exactly where the real content ends within this.
+    response_ids_superset = input_ids_cpu[prompt_len:].tolist()
 
-    offsets, mismatch_text = token_char_spans_from_ids(
-        processor.tokenizer, response_ids_from_full_seq, record["response"]
+    offsets, mismatch_text, n_real_tokens = token_char_spans_from_ids(
+        processor.tokenizer, response_ids_superset, record["response"]
     )
     approx_alignment = offsets is None
     if approx_alignment:
         # Degraded fallback: spread offsets evenly across the response length in
-        # proportion to token count, rather than crashing. Flagged per-record
-        # (see `approx_alignment` in the saved shard) so this can be filtered
-        # out of probe training later if it turns out to be common/unreliable.
+        # proportion to token count, over the FULL superset (can't confidently
+        # identify the closing-tag boundary here), rather than crashing. Flagged
+        # per-record (see `approx_alignment` in the saved shard) so this can be
+        # filtered out of probe training later if it turns out to be common.
         if verbose:
             print(f"  [alignment] decode mismatch for {record['id']}: "
-                  f"decoded={mismatch_text[:80]!r} vs response={record['response'][:80]!r}")
-        n = len(response_ids_from_full_seq)
-        resp_len = len(record["response"])
-        step = resp_len / max(1, n)
-        offsets = [(int(i * step), int((i + 1) * step)) for i in range(n)]
+                  f"decoded={mismatch_text!r} vs response={record['response']!r}")
+        n_real_tokens = len(response_ids_superset)
+        resp_char_len = len(record["response"])
+        step = resp_char_len / max(1, n_real_tokens)
+        offsets = [(int(i * step), int((i + 1) * step)) for i in range(n_real_tokens)]
 
     label_ids = label_response_tokens(offsets, record.get("labels", []) or [])
 
     image_col_mask = (input_ids_cpu[:prompt_len] == image_token_id)
     image_col_mask = torch.cat([image_col_mask, torch.zeros(seq_len - prompt_len, dtype=torch.bool)])
 
-    attn_collector = AttentionLookbackCollector(model, prompt_len, image_col_mask, verbose=verbose)
-    hidden_collector = HiddenStateCollector(model, hidden_layers, prompt_len, verbose=verbose)
+    attn_collector = AttentionLookbackCollector(model, prompt_len, image_col_mask, n_real_tokens, verbose=verbose)
+    hidden_collector = HiddenStateCollector(model, hidden_layers, prompt_len, n_real_tokens, verbose=verbose)
     try:
         batch = {k: (v.to(device) if hasattr(v, "to") else v) for k, v in full_inputs.items()}
         with torch.no_grad():
             out = model(**batch, output_attentions=True, use_cache=False)
-        logits = out.logits[0, prompt_len - 1:-1, :].to(torch.float32)  # predicts tokens [prompt_len:seq_len)
+        resp_end = prompt_len + n_real_tokens  # excludes chat-template closing-tag positions
+        logits = out.logits[0, prompt_len - 1:resp_end - 1, :].to(torch.float32)  # predicts tokens [prompt_len:resp_end)
         log_probs = torch.log_softmax(logits, dim=-1)
         probs = log_probs.exp()
         entropy = (-(probs * log_probs).sum(dim=-1)).cpu().numpy()
-        target_ids = input_ids_cpu[prompt_len:seq_len]
+        target_ids = input_ids_cpu[prompt_len:resp_end]
         nll = (-log_probs.gather(1, target_ids.unsqueeze(1).to(log_probs.device))).squeeze(1).cpu().numpy()
         del out, logits, log_probs, probs
     finally:
@@ -410,7 +435,7 @@ def process_record(record, model, processor, device, image_token_id, hidden_laye
         hidden_collector.remove()
 
     lookback_feats, lookback_cols = attn_collector.stacked_features()
-    n_resp = len(response_ids_from_full_seq)
+    n_resp = n_real_tokens
 
     # Defensive fallback (should not trigger now that HiddenStateCollector keys `captured`
     # by the original requested index -- see its docstring): if a requested layer's hook
