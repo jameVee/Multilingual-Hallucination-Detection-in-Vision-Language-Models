@@ -1,0 +1,50 @@
+{
+  "OCR": {
+    "n_natural": 984,
+    "n_synthetic": 400,
+    "auc_mean": 0.7602160274008081,
+    "auc_std": 0.019521965560653554,
+    "coefs": {
+      "length": -0.1056341837021951,
+      "alpha_ratio": 0.8612836345400326,
+      "digit_ratio": 0.2518573708612406,
+      "space_ratio": -0.541917866095833,
+      "word_count": 0.5827831410895741,
+      "is_alpha_only": -0.8969693511009117,
+      "max_trigram_jaccard": -0.9978884777796374,
+      "image_ocr_overlap": 0.19757138849732025
+    }
+  },
+  "miscounting": {
+    "n_natural": 1500,
+    "n_synthetic": 400,
+    "auc_mean": 0.8847416666666668,
+    "auc_std": 0.010360109796715491,
+    "coefs": {
+      "length": 1.5285253359992472,
+      "alpha_ratio": 0.13774870518652446,
+      "digit_ratio": -0.6528348024144768,
+      "space_ratio": 0.11206913491328893,
+      "word_count": -1.0125881364139384,
+      "is_alpha_only": -0.245621551212165,
+      "max_trigram_jaccard": -1.225879142141353,
+      "image_ocr_overlap": 0.032493457008274926
+    }
+  },
+  "other": {
+    "n_natural": 1180,
+    "n_synthetic": 400,
+    "auc_mean": 0.7283209745762711,
+    "auc_std": 0.033880762144939694,
+    "coefs": {
+      "length": -0.3431176228514412,
+      "alpha_ratio": 1.4851531976259051,
+      "digit_ratio": 0.9178705111665488,
+      "space_ratio": 1.4005293908073333,
+      "word_count": -1.143045689016167,
+      "is_alpha_only": -0.03907190837999016,
+      "max_trigram_jaccard": -1.5042891798538414,
+      "image_ocr_overlap": 0.011825834751837695
+    }
+  }
+}

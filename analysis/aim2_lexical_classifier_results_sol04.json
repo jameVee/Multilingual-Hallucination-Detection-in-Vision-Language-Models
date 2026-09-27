@@ -1,0 +1,82 @@
+{
+  "invention": {
+    "n_natural": 1500,
+    "n_synthetic": 150,
+    "auc_mean": 0.9397333333333332,
+    "auc_std": 0.008965874947836749,
+    "coefs": {
+      "length": -4.179624591514714,
+      "alpha_ratio": 6.256731230952693,
+      "digit_ratio": -1.2054407133943736,
+      "space_ratio": 2.1125888430409026,
+      "word_count": 3.1318743005737177,
+      "is_alpha_only": -5.224042391628775,
+      "max_trigram_jaccard": -0.16900121907204413,
+      "image_ocr_overlap": -0.583382877646538
+    }
+  },
+  "mischaracterization": {
+    "n_natural": 1500,
+    "n_synthetic": 150,
+    "auc_mean": 0.8586111111111112,
+    "auc_std": 0.01805536752038844,
+    "coefs": {
+      "length": -6.116490406981501,
+      "alpha_ratio": 1.2518811917571289,
+      "digit_ratio": 0.05596393755317889,
+      "space_ratio": -1.5396240061318056,
+      "word_count": -0.2972889453682393,
+      "is_alpha_only": 0.5612669803523647,
+      "max_trigram_jaccard": 0.1307829599600317,
+      "image_ocr_overlap": 0.03529704843930089
+    }
+  },
+  "OCR": {
+    "n_natural": 984,
+    "n_synthetic": 1288,
+    "auc_mean": 0.8571567321132114,
+    "auc_std": 0.002898860785169921,
+    "coefs": {
+      "length": -0.8880551569916902,
+      "alpha_ratio": 1.2719148810246415,
+      "digit_ratio": 0.5071833112292166,
+      "space_ratio": -0.546888776992502,
+      "word_count": 0.9395935038720958,
+      "is_alpha_only": -1.2243121638886827,
+      "max_trigram_jaccard": -1.0392306493370826,
+      "image_ocr_overlap": 1.0075165236129986
+    }
+  },
+  "miscounting": {
+    "n_natural": 1500,
+    "n_synthetic": 1000,
+    "auc_mean": 0.7556633333333335,
+    "auc_std": 0.015482832428209001,
+    "coefs": {
+      "length": 0.06535585367510835,
+      "alpha_ratio": 1.1620371033622947,
+      "digit_ratio": 0.7579500412626206,
+      "space_ratio": -0.15486039597078127,
+      "word_count": 0.38861067323991294,
+      "is_alpha_only": -0.0987986753083851,
+      "max_trigram_jaccard": -0.9117230527845978,
+      "image_ocr_overlap": 0.05717449976242894
+    }
+  },
+  "other": {
+    "n_natural": 1180,
+    "n_synthetic": 1150,
+    "auc_mean": 0.789207811348563,
+    "auc_std": 0.015239905566940973,
+    "coefs": {
+      "length": 2.2239752769937917,
+      "alpha_ratio": -0.27425504875297113,
+      "digit_ratio": -0.6513433305756792,
+      "space_ratio": 0.8345328938857719,
+      "word_count": -0.8355620752043906,
+      "is_alpha_only": 0.5718831990759632,
+      "max_trigram_jaccard": -1.25962642369077,
+      "image_ocr_overlap": -0.007012639846246135
+    }
+  }
+}
