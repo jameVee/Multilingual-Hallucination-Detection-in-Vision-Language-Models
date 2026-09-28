@@ -95,25 +95,84 @@ structurally distinguishable from natural ones in a way the model
 actually picks up on and fails to generalize from, this is where it
 should show up most clearly.
 
+## Test set (official SHROOM-Visions submission — Aim 1 conclusion)
+
+Submitted single-seed (seed 42) test predictions for solutions 02-06 to the
+official platform (raw output: `solutions/test_results_official_submission.txt`).
+Solution 01 was never run, so it has no test submission either.
+
+| Solution | EN Cor+Lbl | FR Cor+Lbl | IT Cor+Lbl | ZH Cor+Lbl | avg Cor+Lbl |
+|---|---|---|---|---|---|
+| 02 — real data (baseline) | 0.3516 | 0.3968 | 0.3926 | **0.4495** | **0.3976** |
+| 03 — r_max=8, no LLM (the missing cell) | 0.3337 | 0.3786 | 0.3863 | 0.4426 | 0.3853 |
+| 04 — r_max=8, + LLM | 0.3364 | 0.3758 | 0.3692 | 0.4175 | 0.3747 |
+| 05 — tuned r_max=3, no LLM | 0.3373 | 0.3778 | 0.3893 | 0.4564 | 0.3902 |
+| 06 — tuned r_max=3, + LLM | 0.3350 | 0.3493 | 0.3857 | 0.4377 | 0.3769 |
+
+**H1 is not supported.** H1 predicted that training the missing ablation
+cell (solution 03) would show the rarity-cap and LLM-assisted-injection
+effects don't act uniformly, yielding *some* configuration that beats the
+real-data baseline on Cor+Lbl "in more than the single language (Chinese)
+achieved so far." Instead, across all 16 (augmented config × language)
+combinations on the actual test set, **only one beats the baseline at
+all**: solution 05 on Chinese, by +0.0069 — smaller than baseline's own
+seed-to-seed std (0.0056) measured in the val multi-seed analysis above,
+so not distinguishable from noise even before running a real significance
+test. Every other augmented config loses to baseline in every language,
+including **solution 03 itself — the specific cell H1 was staked on —
+which loses to baseline in all 4 languages**, not just fails to extend
+beyond Chinese. The shared task's original one-language pattern isn't
+exceeded; it's barely matched, and by a different, already-known config
+(05), not by the newly-completed missing cell.
+
+**This is not a contradiction of the val-set multi-seed finding above — it's
+independent confirmation of the same split.** Checking IoU (the label-
+agnostic metric) on this same test data: augmented configs beat the
+baseline in **15 of the same 16 comparisons** (only solution 06 on French
+misses). This is exactly the pattern the val multi-seed analysis already
+established: **augmentation's IoU/raw-Cor gains are real and robust; its
+Cor+Lbl gains are not** — now verified on genuinely held-out test data the
+model never touched during any tuning decision, not just on val.
+
+**Revised takeaway for the thesis**: H1 as literally stated is rejected —
+completing the ablation did not find a configuration that generalizes
+augmentation's benefit past Chinese on the metric that matters most. The
+more accurate characterization, consistent across both val (multi-seed)
+and test (single-seed, this section): synthetic augmentation in this
+pipeline reliably improves span *localization* (IoU) and *label-agnostic*
+correlation (Cor), but does not reliably improve *label-aware* correlation
+(Cor+Lbl) over real-data-only training, on any language tested. That
+distinction — not "does augmentation help" but "which metric does it
+help" — is the real, evidence-backed finding Aim 1 produced.
+
 ## Recommendation
 
 **Solution 05's headline "beats baseline" claim does not survive seed
-variance on the metric that matters most (Cor+Lbl)** — see above. It
-remains the best config on IoU and raw Cor, robustly so, and per-label it
+variance on val, and does not survive contact with the real test set
+either** — see both sections above. It remains the best config on IoU and
+raw Cor, robustly so on both val and test, and per-label (val) it
 robustly helps `mischaracterization`/`other`/`miscounting` — just don't
-claim it beats the baseline overall without immediately caveating Cor+Lbl.
-Treat 05 as the strongest *available* config for downstream use (e.g. a
-test-set submission) on the strength of its label-agnostic and per-label
-gains, not on an overall-Cor+Lbl win that the single-seed table implied.
+claim it beats the baseline overall without immediately caveating Cor+Lbl,
+and don't claim it beats baseline on Chinese Cor+Lbl either without noting
+that +0.0069 margin is smaller than known seed noise. Treat 05 as the
+strongest *available* config for downstream use on the strength of its
+label-agnostic and per-label gains, not on any Cor+Lbl win.
 
 **Solution 03 (the newly-trained missing ablation cell) behaves exactly as
-expected**: nearly identical overall numbers to solution 04 (same r_max=8,
+expected internally, but did not close the gap H1 was betting on.** On
+val, nearly identical overall numbers to solution 04 (same r_max=8,
 differing only by the ~1,200 LLM-assisted examples 04 has and 03 doesn't),
-with the per-label differences landing in sensible directions — `other`
-drops without the LLM-targeted injection (0.067 vs 0.092), `OCR` recovers
+with per-label differences landing in sensible directions — `other` drops
+without the LLM-targeted injection (0.067 vs 0.092), `OCR` recovers
 somewhat (0.320 vs 0.274), consistent with the paper's finding that OCR
-consistently degrades under heavier augmentation. This is a coherent
-result, not just a plausible-looking one.
+consistently degrades under heavier augmentation. That's a coherent
+result, not just a plausible-looking one — but on the real test set, this
+same solution 03 loses to the real-data baseline on Cor+Lbl in all 4
+languages (see "Test set" section above). Completing the missing ablation
+cell answered the *engineering* question (is this cell's behavior
+internally consistent with the other three) without answering the
+*research* question H1 posed (does isolating it unlock a config that beats
+baseline more broadly) — those turned out to be separate questions.
 
 **`other` is the weak point across every augmented config** (0.061-0.114,
 vs. 0.027 for the unaugmented baseline) — augmentation clearly helps this

@@ -1,0 +1,21 @@
+	Identifier	Cor+Lbl	Cor	IoU
+EN	04_vlm_lora_synthetic_augmented_llm	0.3364	0.4601	0.4048	Edit metadata
+FR	04_vlm_lora_synthetic_augmented_llm	0.3758	0.4835	0.4334	Edit metadata
+IT	04_vlm_lora_synthetic_augmented_llm	0.3692	0.4920	0.4359	Edit metadata
+ZH	04_vlm_lora_synthetic_augmented_llm	0.4175	0.5292	0.4846	Edit metadata
+EN	02_vlm_lora_real_data	0.3516	0.4377	0.3739	Edit metadata
+ZH	02_vlm_lora_real_data	0.4495	0.5226	0.4772	Edit metadata
+FR	02_vlm_lora_real_data	0.3968	0.4783	0.4260	Edit metadata
+IT	02_vlm_lora_real_data	0.3926	0.4787	0.4165	Edit metadata
+EN	05_vlm_lora_synthetic_tuned	0.3373	0.4385	0.3865	Edit metadata
+FR	05_vlm_lora_synthetic_tuned	0.3778	0.4771	0.4362	Edit metadata
+IT	05_vlm_lora_synthetic_tuned	0.3893	0.4953	0.4391	Edit metadata
+ZH	05_vlm_lora_synthetic_tuned	0.4564	0.5445	0.4968	Edit metadata
+EN	06_vlm_lora_synthetic_tuned_llm	0.3350	0.4417	0.3917	Edit metadata
+FR	06_vlm_lora_synthetic_tuned_llm	0.3493	0.4569	0.4164	Edit metadata
+IT	06_vlm_lora_synthetic_tuned_llm	0.3857	0.4990	0.4434	Edit metadata
+ZH	06_vlm_lora_synthetic_tuned_llm	0.4377	0.5424	0.5009	Edit metadata
+EN	03_vlm_lora_synthetic_augmented	0.3337	0.4338	0.3860	Edit metadata
+FR	03_vlm_lora_synthetic_augmented	0.3786	0.4706	0.4275	Edit metadata
+IT	03_vlm_lora_synthetic_augmented	0.3863	0.4946	0.4314	Edit metadata
+ZH	03_vlm_lora_synthetic_augmented	0.4426	0.5296	0.4844	Edit metadata
