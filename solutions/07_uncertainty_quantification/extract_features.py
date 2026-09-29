@@ -446,9 +446,25 @@ def process_record(record, model, processor, device, image_token_id, hidden_laye
         target_ids = input_ids_cpu[prompt_len:resp_end]
         nll = (-log_probs.gather(1, target_ids.unsqueeze(1).to(log_probs.device))).squeeze(1).cpu().numpy()
         del out, logits, log_probs, probs
+    except torch.cuda.OutOfMemoryError as exc:
+        # Skip this one record and keep the job alive, rather than crashing the whole
+        # shard -- seen in practice on nlp2: a real run OOMed deterministically at the
+        # SAME record index on a rerun, at a sequence length well under --max_seq_len,
+        # so this is a data-dependent memory spike --max_seq_len's length-based guard
+        # doesn't catch (plausibly the image's own resolution/patch count rather than
+        # final merged token count -- unconfirmed, logged here so it's diagnosable
+        # instead of just disappearing into a crashed process). Explicitly drop
+        # references to every large tensor this record created before empty_cache()
+        # in `finally`, so the next record starts from a genuinely clean slate.
+        print(f"  [OOM] {record['id']}: seq_len={seq_len} n_real_tokens={n_real_tokens} "
+              f"image={record.get('image_name')} -- skipping this record. ({exc})")
+        out = logits = log_probs = probs = batch = None
+        return None
     finally:
         attn_collector.remove()
         hidden_collector.remove()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
     lookback_feats, lookback_cols = attn_collector.stacked_features()
     n_resp = n_real_tokens
@@ -573,7 +589,9 @@ def main():
 
     from tqdm.auto import tqdm
     n_approx = 0
-    n_skipped_long = 0
+    n_skipped = 0  # any of: unresolvable image, empty response, --max_seq_len, or a caught OOM --
+                   # each of those already prints its own specific reason when it happens, so this
+                   # is just a total count, not broken out by cause.
     n_processed = 0
     max_seq_len = args.max_seq_len if args.max_seq_len > 0 else None
     pbar = tqdm(records, desc=f"extract[{args.split}]", unit="ex")
@@ -581,7 +599,7 @@ def main():
         result = process_record(record, model, processor, device, image_token_id, hidden_layers,
                                  max_seq_len=max_seq_len, verbose=args.dry_run)
         if result is None:
-            n_skipped_long += 1
+            n_skipped += 1
             continue
         if args.dry_run:
             print(f"  id={result['record_id']} lang={result['language']} n_tokens={result['n_tokens']} "
@@ -618,8 +636,8 @@ def main():
 
     n_tokens_final = save_checkpoint()
     print(f"Saved {n_tokens_final} response tokens from {n_processed} records "
-          f"({n_approx} used approx_alignment, {n_skipped_long} skipped for exceeding "
-          f"--max_seq_len={args.max_seq_len}) -> {out_path}")
+          f"({n_approx} used approx_alignment, {n_skipped} records skipped total -- "
+          f"see [skip]/[OOM] lines above for why each one was) -> {out_path}")
 
 
 if __name__ == "__main__":
