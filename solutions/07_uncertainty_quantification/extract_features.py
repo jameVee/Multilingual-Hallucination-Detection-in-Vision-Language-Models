@@ -369,7 +369,7 @@ class HiddenStateCollector:
             h.remove()
 
 
-def process_record(record, model, processor, device, image_token_id, hidden_layers, verbose=False):
+def process_record(record, model, processor, device, image_token_id, hidden_layers, max_seq_len=None, verbose=False):
     conv = build_plain_conversation(record)
     if conv is None:
         return None
@@ -386,6 +386,22 @@ def process_record(record, model, processor, device, image_token_id, hidden_laye
     seq_len = full_inputs["input_ids"].shape[1]
     if seq_len <= prompt_len:
         return None  # empty response after tokenization, nothing to score
+    if max_seq_len is not None and seq_len > max_seq_len:
+        # Same guard as train_lora.py's --max_seq_len, for the same reason: one
+        # unusually long example (long response + many image tokens) can spike
+        # attn_implementation="eager"'s per-layer seq_len^2 attention memory well
+        # past what every other example in the run needed, OOMing an otherwise-
+        # stable job well into it -- confirmed in practice on a real nlp2 run
+        # (stable for 76 records at ~1.4 ex/s, then OOM at 23.3/23.6 GiB used).
+        # Skip rather than truncate: truncating risks cutting off gold label
+        # spans, silently corrupting that example's labels instead of just
+        # dropping the example.
+        # Unconditional, not gated on `verbose` -- same as train_lora.py's own
+        # --max_seq_len skip message, since a skip is rare enough to always be
+        # worth surfacing (unlike the 36-line hook-list dump, which is only
+        # useful once, under --dry_run).
+        print(f"  [skip] {record['id']}: seq_len={seq_len} exceeds --max_seq_len={max_seq_len}")
+        return None
 
     input_ids_cpu = full_inputs["input_ids"][0]
     # Superset of the real response: also includes the chat template's trailing
@@ -473,6 +489,19 @@ def main():
     p.add_argument("--max_pixels", type=int, default=1024 * 28 * 28)
     p.add_argument("--min_pixels", type=int, default=256 * 28 * 28)
     p.add_argument("--output_dir", default=str(_THIS_DIR / "features"))
+    p.add_argument("--max_seq_len", type=int, default=4096,
+                    help="Records whose tokenized (image+text) sequence exceeds this length are "
+                         "skipped rather than processed. Same purpose as train_lora.py's flag of the "
+                         "same name: attn_implementation='eager' materializes a full seq_len^2 "
+                         "attention tensor per layer, so one unusually long example can spike memory "
+                         "well past what every other example needed and OOM an otherwise-stable run. "
+                         "Pass 0 to disable (process every record regardless of length).")
+    p.add_argument("--save_every", type=int, default=200,
+                    help="Write the shard's .npz to disk every N successfully-processed records, "
+                         "not just once at the very end -- so a crash (OOM, disconnect, ...) loses at "
+                         "most this many records' worth of work, not the whole shard. Each save "
+                         "overwrites the same output file with everything accumulated so far. Pass 0 "
+                         "to disable (save once at the end only).")
     p.add_argument("--dry_run", action="store_true",
                     help="Load the model, run 3 examples, print every unverified-assumption "
                          "diagnostic (image_token_id, hooked module names, alignment check), "
@@ -518,14 +547,41 @@ def main():
     shard_data = {"entropy": [], "nll": [], "label_id": [], "language": [], "record_id": [],
                   "approx_alignment": [], "lookback": []}
     hidden_shard = {idx: [] for idx in hidden_layers}
-    lookback_columns = None
+    lookback_columns_holder = [None]
+
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    out_path = output_dir / f"{args.split}_shard{args.shard_id}of{args.num_shards}.npz"
+
+    def save_checkpoint():
+        save_kwargs = {
+            "entropy": np.concatenate(shard_data["entropy"]) if shard_data["entropy"] else np.zeros(0, np.float32),
+            "nll": np.concatenate(shard_data["nll"]) if shard_data["nll"] else np.zeros(0, np.float32),
+            "label_id": np.concatenate(shard_data["label_id"]) if shard_data["label_id"] else np.zeros(0, np.int8),
+            "language": np.array(shard_data["language"], dtype=object),
+            "record_id": np.array(shard_data["record_id"], dtype=object),
+            "approx_alignment": np.array(shard_data["approx_alignment"], dtype=bool),
+            "lookback": (np.concatenate(shard_data["lookback"], axis=0)
+                         if shard_data["lookback"] else np.zeros((0, 0), np.float32)),
+            "lookback_columns": np.array(lookback_columns_holder[0] or [], dtype=object),
+        }
+        for idx in hidden_layers:
+            save_kwargs[f"hidden_{idx}"] = (np.concatenate(hidden_shard[idx], axis=0)
+                                             if hidden_shard[idx] else np.zeros((0, 0), np.float32))
+        np.savez_compressed(out_path, **save_kwargs)
+        return save_kwargs["entropy"].shape[0]
 
     from tqdm.auto import tqdm
     n_approx = 0
-    for record in tqdm(records, desc=f"extract[{args.split}]", unit="ex"):
+    n_skipped_long = 0
+    n_processed = 0
+    max_seq_len = args.max_seq_len if args.max_seq_len > 0 else None
+    pbar = tqdm(records, desc=f"extract[{args.split}]", unit="ex")
+    for record in pbar:
         result = process_record(record, model, processor, device, image_token_id, hidden_layers,
-                                 verbose=args.dry_run)
+                                 max_seq_len=max_seq_len, verbose=args.dry_run)
         if result is None:
+            n_skipped_long += 1
             continue
         if args.dry_run:
             print(f"  id={result['record_id']} lang={result['language']} n_tokens={result['n_tokens']} "
@@ -535,8 +591,8 @@ def main():
                   f"n_positive_tokens={(result['label_id'] != CLEAN_LABEL_ID).sum()}")
             continue
 
-        if lookback_columns is None:
-            lookback_columns = result["lookback_columns"]
+        if lookback_columns_holder[0] is None:
+            lookback_columns_holder[0] = result["lookback_columns"]
         n_approx += int(result["approx_alignment"])
         shard_data["entropy"].append(result["entropy"])
         shard_data["nll"].append(result["nll"])
@@ -547,6 +603,11 @@ def main():
         shard_data["lookback"].append(result["lookback"])
         for idx in hidden_layers:
             hidden_shard[idx].append(result["hidden"][str(idx)])
+        n_processed += 1
+
+        if args.save_every > 0 and n_processed % args.save_every == 0:
+            n_tokens_so_far = save_checkpoint()
+            pbar.write(f"  checkpoint: {n_processed} records / {n_tokens_so_far} tokens -> {out_path}")
 
     if args.dry_run:
         print("\n--dry_run complete. Nothing saved. Review the diagnostics above -- "
@@ -555,25 +616,10 @@ def main():
               "before running a real extraction job.")
         return
 
-    output_dir = Path(args.output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    out_path = output_dir / f"{args.split}_shard{args.shard_id}of{args.num_shards}.npz"
-    save_kwargs = {
-        "entropy": np.concatenate(shard_data["entropy"]) if shard_data["entropy"] else np.zeros(0, np.float32),
-        "nll": np.concatenate(shard_data["nll"]) if shard_data["nll"] else np.zeros(0, np.float32),
-        "label_id": np.concatenate(shard_data["label_id"]) if shard_data["label_id"] else np.zeros(0, np.int8),
-        "language": np.array(shard_data["language"], dtype=object),
-        "record_id": np.array(shard_data["record_id"], dtype=object),
-        "approx_alignment": np.array(shard_data["approx_alignment"], dtype=bool),
-        "lookback": np.concatenate(shard_data["lookback"], axis=0) if shard_data["lookback"] else np.zeros((0, 0), np.float32),
-        "lookback_columns": np.array(lookback_columns or [], dtype=object),
-    }
-    for idx in hidden_layers:
-        save_kwargs[f"hidden_{idx}"] = (np.concatenate(hidden_shard[idx], axis=0)
-                                         if hidden_shard[idx] else np.zeros((0, 0), np.float32))
-    np.savez_compressed(out_path, **save_kwargs)
-    print(f"Saved {save_kwargs['entropy'].shape[0]} response tokens "
-          f"({n_approx} records used approx_alignment) -> {out_path}")
+    n_tokens_final = save_checkpoint()
+    print(f"Saved {n_tokens_final} response tokens from {n_processed} records "
+          f"({n_approx} used approx_alignment, {n_skipped_long} skipped for exceeding "
+          f"--max_seq_len={args.max_seq_len}) -> {out_path}")
 
 
 if __name__ == "__main__":
