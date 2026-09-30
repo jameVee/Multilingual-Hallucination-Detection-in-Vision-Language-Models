@@ -12,8 +12,8 @@ submitted systems, and official metrics — per the thesis proposal's Aim 4.
 | Category x language scorer breakdown | Done (`solutions/common/scorer_local.py`'s `per_label_language`) |
 | Best-fine-tuned-solution-per-cell table | Done (`compare_cells.py` -> `finetuned_cell_winners.json`) |
 | Span assembly (per-token probs -> spans) | Done, unit-tested (`span_assembly.py`) |
-| Per-token character offsets | Code done (`../07_uncertainty_quantification/compute_offsets.py`) — **needs to run on nlp2** against the existing shard `.npz` files (cheap, tokenizer-only, no GPU forward pass) |
-| Persist per-cell fitted probe models | Not yet started |
+| Per-token character offsets | Done — ran on nlp2 (`compute_offsets.py`, all 4 shards) |
+| Persist per-cell fitted probe models | Code done (`train_probes.py --save_models_dir`) — **needs to run on nlp2** against the real shards |
 | Per-cell threshold tuning | Not yet started |
 | Uncertainty-only inference script (for new/val/test data) | Not yet started — needs the frozen model + GPU, runs on nlp2 |
 | Final merge (fine-tuned + uncertainty per selection table) | Not yet started |
@@ -52,16 +52,16 @@ check isn't currently possible without either (a) a nested/cross-validated
 selection on val, splitting it into a selection half and an eval half, or
 (b) getting per-category test scores some other way).
 
-## Next step (nlp2, cheap — no GPU forward pass)
+## Next step (nlp2, CPU-only, no GPU/model needed)
 
 ```bash
 cd solutions/07_uncertainty_quantification
-python compute_offsets.py --split val --shard_id 0 --num_shards 1
-python compute_offsets.py --split train --shard_id 0 --num_shards 3
-python compute_offsets.py --split train --shard_id 1 --num_shards 3
-python compute_offsets.py --split train --shard_id 2 --num_shards 3
+python train_probes.py --features_dir features/ --save_models_dir models/
 ```
 
-Each adds `offset_start`/`offset_end` arrays to its shard's existing
-`.npz` file in place (everything else preserved) — needed before
-threshold-tuning or span assembly can be run against real Aim 3 data.
+Same command as before, plus `--save_models_dir` — fits and persists the
+single best-performing model (an individual signal, or the ensemble if it
+wins) for each of the 20 cells as a small `.joblib` file under `models/`,
+plus `models/models_manifest.json` summarizing which signal each cell
+uses. These are small (a few KB each) and meant to be committed to git,
+unlike the raw feature shards.
