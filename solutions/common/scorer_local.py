@@ -126,6 +126,31 @@ def score_predictions(gold_records, pred_records, verbose=False):
         }
     result["per_label"] = per_label
 
+    # Category x language cross-breakdown (Aim 4): the per_language and per_label
+    # blocks above each collapse the other axis away, but Aim 4's per-cell source
+    # selection ("does the fine-tuned model or an Aim 3 probe win THIS category in
+    # THIS language") needs both axes held fixed at once.
+    per_label_language = {}
+    for label in data_io.LABEL_ORDER:
+        for lang in languages:
+            lang_ids = {r["id"] for r in per_record if r["language"] == lang}
+            label_ious, label_cors = [], []
+            for ref, pred in zip(ref_dicts, pred_dicts):
+                if ref["id"] not in lang_ids:
+                    continue
+                ref_f = {**ref, "labels": [s for s in ref["labels"] if s["label"] == label]}
+                pred_f = {**pred, "labels": [s for s in pred["labels"] if s["label"] == label]}
+                if not ref_f["labels"] and not pred_f["labels"]:
+                    continue
+                label_ious.append(score_iou(ref_f, pred_f))
+                label_cors.append(score_cor(ref, pred, label_filtered_=label))
+            per_label_language[f"{label}/{lang}"] = {
+                "iou": float(np.mean(label_ious)) if label_ious else float("nan"),
+                "cor": float(np.mean(label_cors)) if label_cors else float("nan"),
+                "n_records_with_label": len(label_ious),
+            }
+    result["per_label_language"] = per_label_language
+
     if verbose:
         o = result["overall"]
         print(f"n={result['n']}  IoU={o['iou']:.4f}  Cor={o['cor']:.4f}  CorLbl={o['cor_lbl']:.4f}")
