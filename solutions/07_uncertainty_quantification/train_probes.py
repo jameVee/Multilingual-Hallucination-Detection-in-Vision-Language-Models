@@ -9,21 +9,38 @@ Runs entirely on CPU -- no GPU needed, unlike extract_features.py. Safe to
 run locally after copying the `features/` shards off nlp2, or directly on
 nlp2 right after extraction.
 
+**Train/val held-out split, not token-level CV.** An earlier version fit
+AND evaluated each probe via 5-fold StratifiedKFold over every token
+pooled from every shard file (train.jsonl's and val.jsonl's alike). That
+double-counts information: adjacent tokens within the same response are
+highly correlated (smooth entropy/hidden-state/attention-ratio across a
+sequence), so a token-level CV split can land two tokens from the SAME
+response on opposite sides of a fold, letting the classifier partly
+"generalize" to a held-out token by recognizing its near-identical
+neighbor sitting in the training fold -- inflating the reported AUC. This
+version instead fits each probe ONLY on tokens from `train_shard*.npz`
+files and evaluates ONLY on tokens from `val_shard*.npz` files -- disjoint
+by construction (different source records entirely), mirroring exactly
+how Aim 1's LoRA solutions were themselves evaluated. Variance is now
+estimated by bootstrap-resampling the held-out val tokens (not CV folds).
+
 Per (category, language) cell:
-  - Positive tokens: label_id == that category, language == that language.
-  - Negative tokens: label_id == CLEAN (-1), language == that language,
-    subsampled to at most `--neg_cap` for speed/balance.
-  - If positives < `--min_positive` (default 30): falls back to a pooled
-    multilingual probe for that category (all languages' positives/
-    negatives together) instead of skipping the cell -- this is the
-    "shared multilingual fallback probe for low-count cells such as OCR"
-    named in the thesis proposal's Phase 2 description. The grid marks
-    which cells used the fallback.
+  - Positive tokens: label_id == that category, language == that language,
+    drawn separately from the train-split and val-split token pools.
+  - Negative tokens: label_id == CLEAN (-1), same split/language,
+    subsampled to at most `--neg_cap` per side for speed/balance.
+  - If a side's positives < `--min_train_positive` / `--min_val_positive`:
+    falls back to pooling all languages together for that category, on
+    that side only -- this is the "shared multilingual fallback probe for
+    low-count cells such as OCR" named in the thesis proposal's Phase 2
+    description, now applied independently to the train-fit and val-eval
+    sides so it never mixes train and val data together.
 
 Signals evaluated separately, then ensembled (concatenated features) only
 for cells where >=2 of the 3 individual signals reach `--gate_auc` (default
-0.55) -- mirrors Experiment 4's stated gate ("proceeds only if at least two
-of the three signals individually show validation AUC clearly above 0.5").
+0.55) on the held-out val AUC -- mirrors Experiment 4's stated gate
+("proceeds only if at least two of the three signals individually show
+validation AUC clearly above 0.5").
 
 Usage:
     python train_probes.py --features_dir features/
@@ -36,7 +53,7 @@ from pathlib import Path
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import StratifiedKFold, cross_val_score
+from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import StandardScaler
 
 import sys
@@ -51,6 +68,24 @@ LANGUAGES = sorted(data_io.VALID_LANGUAGES)
 CLEAN_LABEL_ID = -1
 
 
+def _source_split_of(filename: str) -> str:
+    """'train_shard0of3.npz' -> 'train', 'val_shard0of1.npz' -> 'val'.
+    NOTE: deliberately NOT derived from each record's own `id` field --
+    the dataset's id scheme embeds the split it was originally annotated
+    under, which does not reliably match which of data/train.jsonl vs.
+    data/val.jsonl a record currently lives in (observed directly: records
+    loaded from data/val.jsonl carrying ids like "train-en-2667"). The
+    shard's own filename (set by extract_features.py's --split flag) is
+    the only reliable source of truth for this.
+    """
+    stem = Path(filename).stem
+    if stem.startswith("train_shard"):
+        return "train"
+    if stem.startswith("val_shard"):
+        return "val"
+    raise ValueError(f"Can't infer split from shard filename: {filename}")
+
+
 def load_shards(features_dir):
     files = sorted(Path(features_dir).glob("*_shard*.npz"))
     if not files:
@@ -58,7 +93,9 @@ def load_shards(features_dir):
     merged = {}
     hidden_keys = set()
     for f in files:
+        split = _source_split_of(f.name)
         data = np.load(f, allow_pickle=True)
+        n = data["entropy"].shape[0]
         for key in data.files:
             if key == "lookback_columns":
                 merged.setdefault(key, data[key])  # assume identical across shards
@@ -66,40 +103,38 @@ def load_shards(features_dir):
             merged.setdefault(key, []).append(data[key])
             if key.startswith("hidden_"):
                 hidden_keys.add(key)
+        merged.setdefault("source_split", []).append(np.array([split] * n, dtype=object))
     out = {}
     for key, parts in merged.items():
         if key == "lookback_columns":
             out[key] = parts
         else:
             out[key] = np.concatenate(parts, axis=0)
-    print(f"Loaded {len(files)} shard file(s), {out['entropy'].shape[0]} total response tokens, "
+    n_train = int((out["source_split"] == "train").sum())
+    n_val = int((out["source_split"] == "val").sum())
+    print(f"Loaded {len(files)} shard file(s): {n_train} train-split tokens, {n_val} val-split tokens, "
           f"hidden-state layers found: {sorted(hidden_keys)}")
+    if n_train == 0 or n_val == 0:
+        raise RuntimeError(
+            f"Need at least one train_shard*.npz AND one val_shard*.npz file under {features_dir} -- "
+            f"found train_tokens={n_train}, val_tokens={n_val}. Probes are fit on train, evaluated on val."
+        )
     return out
 
 
-def auc_5fold(X, y, seed=42):
-    if len(np.unique(y)) < 2 or len(y) < 20:
-        return None
-    Xs = StandardScaler().fit_transform(X)
-    clf = LogisticRegression(class_weight="balanced", max_iter=2000)
-    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=seed)
-    try:
-        scores = cross_val_score(clf, Xs, y, cv=cv, scoring="roc_auc")
-    except ValueError:
-        return None
-    return float(scores.mean()), float(scores.std())
-
-
-def select_indices(data, category_idx, language, neg_cap, min_positive, rng):
-    """Returns (pos_idx, neg_idx, used_fallback). Tries the (category,
-    language) cell first; falls back to pooling all languages for that
-    category if positives are too scarce."""
+def select_split_indices(data, category_idx, language, split, neg_cap, min_positive, rng):
+    """Same idea as the old select_indices, but restricted to one `split`
+    ('train' or 'val') throughout -- both the primary language-matched
+    attempt and the multilingual-pooling fallback stay within that split,
+    so train and val tokens are never mixed."""
     label_id = data["label_id"]
     lang = data["language"]
+    split_mask = (data["source_split"] == split)
 
     def build(lang_mask):
-        pos = np.where((label_id == category_idx) & lang_mask)[0]
-        neg_pool = np.where((label_id == CLEAN_LABEL_ID) & lang_mask)[0]
+        mask = split_mask & lang_mask
+        pos = np.where((label_id == category_idx) & mask)[0]
+        neg_pool = np.where((label_id == CLEAN_LABEL_ID) & mask)[0]
         if len(neg_pool) > neg_cap:
             neg_pool = rng.choice(neg_pool, size=neg_cap, replace=False)
         return pos, neg_pool
@@ -123,12 +158,49 @@ def features_for(data, idx, signal):
     raise ValueError(signal)
 
 
+def auc_holdout(X_train, y_train, X_val, y_val, n_bootstrap=200, seed=42):
+    """Fit on train, evaluate on held-out val -- point estimate plus a
+    bootstrap std (resampling val rows with replacement) instead of a CV
+    std, since there's no CV here: train and val are already a genuine
+    held-out split by construction."""
+    if len(np.unique(y_train)) < 2 or len(np.unique(y_val)) < 2:
+        return None
+    scaler = StandardScaler().fit(X_train)
+    Xs_train = scaler.transform(X_train)
+    Xs_val = scaler.transform(X_val)
+
+    clf = LogisticRegression(class_weight="balanced", max_iter=2000)
+    clf.fit(Xs_train, y_train)
+    val_probs = clf.predict_proba(Xs_val)[:, 1]
+    point_auc = roc_auc_score(y_val, val_probs)
+
+    rng = np.random.RandomState(seed)
+    n = len(y_val)
+    boot_aucs = []
+    for _ in range(n_bootstrap):
+        idx = rng.randint(0, n, size=n)
+        y_b = y_val[idx]
+        if len(np.unique(y_b)) < 2:
+            continue
+        boot_aucs.append(roc_auc_score(y_b, val_probs[idx]))
+    std = float(np.std(boot_aucs)) if boot_aucs else float("nan")
+    return float(point_auc), std, clf, scaler
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--features_dir", default=str(_THIS_DIR / "features"))
     p.add_argument("--neg_cap", type=int, default=3000)
-    p.add_argument("--min_positive", type=int, default=30)
+    p.add_argument("--min_train_positive", type=int, default=30,
+                    help="Below this many train-split positives for a (category, language) cell, "
+                         "fall back to pooling all languages' train-split tokens for that category.")
+    p.add_argument("--min_val_positive", type=int, default=10,
+                    help="Below this many val-split positives for a (category, language) cell, "
+                         "fall back to pooling all languages' val-split tokens for that category "
+                         "(evaluation only -- never mixed with train).")
     p.add_argument("--gate_auc", type=float, default=0.55)
+    p.add_argument("--n_bootstrap", type=int, default=200,
+                    help="Bootstrap resamples of the held-out val set used to estimate each AUC's std.")
     p.add_argument("--output", default=str(_THIS_DIR / "aim3_auc_grid.json"))
     args = p.parse_args()
 
@@ -138,41 +210,60 @@ def main():
     rng = np.random.RandomState(42)
 
     grid = {}
-    print(f"\n{'category':22} {'language':8} {'fallback':8} " +
+    print(f"\n{'category':22} {'language':8} {'fallback':10} " +
           " ".join(f"{s:>14}" for s in signals) + f" {'ensemble':>14}")
     for cat_idx, category in enumerate(LABEL_ORDER):
         for language in LANGUAGES:
-            pos, neg, fallback = select_indices(data, cat_idx, language, args.neg_cap, args.min_positive, rng)
+            pos_tr, neg_tr, fb_tr = select_split_indices(
+                data, cat_idx, language, "train", args.neg_cap, args.min_train_positive, rng)
+            pos_va, neg_va, fb_va = select_split_indices(
+                data, cat_idx, language, "val", args.neg_cap, args.min_val_positive, rng)
             cell_key = f"{category}/{language}"
-            if len(pos) < 5 or len(neg) < 5:
-                print(f"{category:22} {language:8} {'--':8} insufficient data (pos={len(pos)}, neg={len(neg)})")
-                grid[cell_key] = {"status": "insufficient_data", "n_positive": int(len(pos)), "n_negative": int(len(neg))}
+            fallback_str = f"{'T' if fb_tr else '-'}{'V' if fb_va else '-'}"
+
+            if len(pos_tr) < 5 or len(neg_tr) < 5 or len(pos_va) < 5 or len(neg_va) < 5:
+                print(f"{category:22} {language:8} {fallback_str:10} insufficient data "
+                      f"(train pos={len(pos_tr)} neg={len(neg_tr)}, val pos={len(pos_va)} neg={len(neg_va)})")
+                grid[cell_key] = {
+                    "status": "insufficient_data",
+                    "n_train_positive": int(len(pos_tr)), "n_train_negative": int(len(neg_tr)),
+                    "n_val_positive": int(len(pos_va)), "n_val_negative": int(len(neg_va)),
+                }
                 continue
 
-            idx = np.concatenate([pos, neg])
-            y = np.concatenate([np.ones(len(pos)), np.zeros(len(neg))])
+            idx_tr = np.concatenate([pos_tr, neg_tr])
+            y_tr = np.concatenate([np.ones(len(pos_tr)), np.zeros(len(neg_tr))])
+            idx_va = np.concatenate([pos_va, neg_va])
+            y_va = np.concatenate([np.ones(len(pos_va)), np.zeros(len(neg_va))])
 
-            cell_result = {"n_positive": int(len(pos)), "n_negative": int(len(neg)), "fallback_multilingual": fallback,
-                           "signals": {}}
+            cell_result = {
+                "n_train_positive": int(len(pos_tr)), "n_train_negative": int(len(neg_tr)),
+                "n_val_positive": int(len(pos_va)), "n_val_negative": int(len(neg_va)),
+                "fallback_train_multilingual": fb_tr, "fallback_val_multilingual": fb_va,
+                "signals": {},
+            }
             passing = []
-            feats_for_ensemble = []
-            row_str = f"{category:22} {language:8} {'yes' if fallback else 'no':8}"
+            feats_tr_for_ensemble, feats_va_for_ensemble = [], []
+            row_str = f"{category:22} {language:8} {fallback_str:10}"
             for signal in signals:
-                X = features_for(data, idx, signal)
-                result = auc_5fold(X, y)
+                X_tr = features_for(data, idx_tr, signal)
+                X_va = features_for(data, idx_va, signal)
+                result = auc_holdout(X_tr, y_tr, X_va, y_va, n_bootstrap=args.n_bootstrap)
                 if result is None:
                     row_str += f" {'n/a':>14}"
                     continue
-                mean_auc, std_auc = result
+                mean_auc, std_auc, _, _ = result
                 cell_result["signals"][signal] = {"auc_mean": mean_auc, "auc_std": std_auc}
                 row_str += f" {mean_auc:.3f}+/-{std_auc:.2f}"
                 if mean_auc >= args.gate_auc:
                     passing.append(signal)
-                    feats_for_ensemble.append(X)
+                    feats_tr_for_ensemble.append(X_tr)
+                    feats_va_for_ensemble.append(X_va)
 
             if len(passing) >= 2:
-                X_ens = np.concatenate(feats_for_ensemble, axis=1)
-                ens_result = auc_5fold(X_ens, y)
+                X_tr_ens = np.concatenate(feats_tr_for_ensemble, axis=1)
+                X_va_ens = np.concatenate(feats_va_for_ensemble, axis=1)
+                ens_result = auc_holdout(X_tr_ens, y_tr, X_va_ens, y_va, n_bootstrap=args.n_bootstrap)
                 if ens_result is not None:
                     cell_result["ensemble"] = {"auc_mean": ens_result[0], "auc_std": ens_result[1],
                                                 "signals_used": passing}
@@ -188,7 +279,9 @@ def main():
     n_cells_any_signal = sum(1 for v in grid.values() if v["status"] == "ok"
                               and any(s["auc_mean"] >= args.gate_auc for s in v["signals"].values()))
     print(f"\n{n_cells_any_signal}/{n_cells_tested} testable (category, language) cells have "
-          f">=1 signal with AUC >= {args.gate_auc} -- this is the evidence relevant to H3.")
+          f">=1 signal with held-out AUC >= {args.gate_auc} -- this is the evidence relevant to H3.")
+    print("(fallback column: T = train side pooled multilingual, V = val side pooled multilingual, "
+          "- = language-specific data was sufficient)")
 
     with open(args.output, "w", encoding="utf-8") as f:
         json.dump(grid, f, indent=2)
