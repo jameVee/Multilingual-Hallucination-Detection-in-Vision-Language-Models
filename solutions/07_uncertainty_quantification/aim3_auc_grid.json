@@ -1,0 +1,576 @@
+{
+  "invention/en": {
+    "n_positive": 38809,
+    "n_negative": 3000,
+    "fallback_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.5065783287944999,
+        "auc_std": 0.013567245368963999
+      },
+      "lookback": {
+        "auc_mean": 0.7525584515539907,
+        "auc_std": 0.01256633336588422
+      },
+      "hidden_-1": {
+        "auc_mean": 0.7333303031596826,
+        "auc_std": 0.015344549520648218
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.7362078892730466,
+      "auc_std": 0.014008795909087277,
+      "signals_used": [
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "invention/fr": {
+    "n_positive": 55886,
+    "n_negative": 3000,
+    "fallback_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.5143557231542877,
+        "auc_std": 0.01138800906639588
+      },
+      "lookback": {
+        "auc_mean": 0.7728277967890346,
+        "auc_std": 0.00673895182197022
+      },
+      "hidden_-1": {
+        "auc_mean": 0.727669259064814,
+        "auc_std": 0.015004373831640012
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.7265618491497327,
+      "auc_std": 0.015092805175769839,
+      "signals_used": [
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "invention/it": {
+    "n_positive": 25650,
+    "n_negative": 3000,
+    "fallback_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.5207899610136452,
+        "auc_std": 0.023237092338764843
+      },
+      "lookback": {
+        "auc_mean": 0.805769298245614,
+        "auc_std": 0.011141713792903522
+      },
+      "hidden_-1": {
+        "auc_mean": 0.7278899935022742,
+        "auc_std": 0.005909720642670876
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.7565101039636126,
+      "auc_std": 0.01222404524431822,
+      "signals_used": [
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "invention/zh": {
+    "n_positive": 20704,
+    "n_negative": 3000,
+    "fallback_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.5305650445293735,
+        "auc_std": 0.012284145034552033
+      },
+      "lookback": {
+        "auc_mean": 0.8006403459999587,
+        "auc_std": 0.006366832642611364
+      },
+      "hidden_-1": {
+        "auc_mean": 0.77657223779642,
+        "auc_std": 0.014183633707522568
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.8099908058373883,
+      "auc_std": 0.008957348384976003,
+      "signals_used": [
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "mischaracterization/en": {
+    "n_positive": 18503,
+    "n_negative": 3000,
+    "fallback_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.5130342861680919,
+        "auc_std": 0.018697235799410333
+      },
+      "lookback": {
+        "auc_mean": 0.7461534836092509,
+        "auc_std": 0.0063736899927830494
+      },
+      "hidden_-1": {
+        "auc_mean": 0.7137646909892871,
+        "auc_std": 0.0111117902553879
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.7310455841737442,
+      "auc_std": 0.008278001004744382,
+      "signals_used": [
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "mischaracterization/fr": {
+    "n_positive": 13957,
+    "n_negative": 3000,
+    "fallback_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.5623680717535249,
+        "auc_std": 0.01207795433520246
+      },
+      "lookback": {
+        "auc_mean": 0.7644969010475752,
+        "auc_std": 0.005336212057216214
+      },
+      "hidden_-1": {
+        "auc_mean": 0.7144385894061175,
+        "auc_std": 0.007580403216024785
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.7452171651905412,
+      "auc_std": 0.006611414606130091,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "mischaracterization/it": {
+    "n_positive": 11717,
+    "n_negative": 3000,
+    "fallback_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.5538158551274898,
+        "auc_std": 0.016838631162874387
+      },
+      "lookback": {
+        "auc_mean": 0.7646375546128497,
+        "auc_std": 0.004013759218680414
+      },
+      "hidden_-1": {
+        "auc_mean": 0.6970070737539312,
+        "auc_std": 0.005560157360884212
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.7292081235126829,
+      "auc_std": 0.004696217508297024,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "mischaracterization/zh": {
+    "n_positive": 11135,
+    "n_negative": 3000,
+    "fallback_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.5343615476725041,
+        "auc_std": 0.011177274842544195
+      },
+      "lookback": {
+        "auc_mean": 0.7725137703936537,
+        "auc_std": 0.00939190333560936
+      },
+      "hidden_-1": {
+        "auc_mean": 0.7630926508007784,
+        "auc_std": 0.006905830117039389
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.7903872174824128,
+      "auc_std": 0.005527785437412098,
+      "signals_used": [
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "OCR/en": {
+    "n_positive": 2353,
+    "n_negative": 3000,
+    "fallback_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.7151392939422687,
+        "auc_std": 0.010227971939946212
+      },
+      "lookback": {
+        "auc_mean": 0.9925522654379545,
+        "auc_std": 0.0021311040097145794
+      },
+      "hidden_-1": {
+        "auc_mean": 0.9956062248723857,
+        "auc_std": 0.001765407213381295
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.9963069732423845,
+      "auc_std": 0.0015614441200805954,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "OCR/fr": {
+    "n_positive": 702,
+    "n_negative": 3000,
+    "fallback_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.6420370567375887,
+        "auc_std": 0.02303847994661578
+      },
+      "lookback": {
+        "auc_mean": 0.9929567798041201,
+        "auc_std": 0.004764883176791345
+      },
+      "hidden_-1": {
+        "auc_mean": 0.9903823032759203,
+        "auc_std": 0.003105972729549305
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.9931651637960149,
+      "auc_std": 0.0033830803699974104,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "OCR/it": {
+    "n_positive": 730,
+    "n_negative": 3000,
+    "fallback_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.6149851598173516,
+        "auc_std": 0.02271249486997997
+      },
+      "lookback": {
+        "auc_mean": 0.9943767123287671,
+        "auc_std": 0.0008910941647726059
+      },
+      "hidden_-1": {
+        "auc_mean": 0.989689497716895,
+        "auc_std": 0.0026077557209461216
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.9931118721461187,
+      "auc_std": 0.0020003387882610896,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "OCR/zh": {
+    "n_positive": 928,
+    "n_negative": 3000,
+    "fallback_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.7061624915237819,
+        "auc_std": 0.021337922453341415
+      },
+      "lookback": {
+        "auc_mean": 0.9946584955923665,
+        "auc_std": 0.0028815625678254757
+      },
+      "hidden_-1": {
+        "auc_mean": 0.9958520585101229,
+        "auc_std": 0.002240965401426977
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.9969079724886176,
+      "auc_std": 0.002026972218558919,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "miscounting/en": {
+    "n_positive": 2890,
+    "n_negative": 3000,
+    "fallback_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.7278215109573241,
+        "auc_std": 0.01771775471919864
+      },
+      "lookback": {
+        "auc_mean": 0.9730948673587083,
+        "auc_std": 0.0020905982969816007
+      },
+      "hidden_-1": {
+        "auc_mean": 0.9887110726643599,
+        "auc_std": 0.0011225975707902973
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.9901528258362168,
+      "auc_std": 0.000896112866509401,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "miscounting/fr": {
+    "n_positive": 911,
+    "n_negative": 3000,
+    "fallback_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.6369725975299746,
+        "auc_std": 0.016410297665334507
+      },
+      "lookback": {
+        "auc_mean": 0.9653597600032027,
+        "auc_std": 0.004719752718868462
+      },
+      "hidden_-1": {
+        "auc_mean": 0.9684899917932706,
+        "auc_std": 0.010378235752560356
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.973086320783042,
+      "auc_std": 0.00838270275358709,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "miscounting/it": {
+    "n_positive": 3364,
+    "n_negative": 3000,
+    "fallback_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.6516143769605416,
+        "auc_std": 0.019517448559982532
+      },
+      "lookback": {
+        "auc_mean": 0.9859207738537465,
+        "auc_std": 0.0024160410346778147
+      },
+      "hidden_-1": {
+        "auc_mean": 0.9859462524175099,
+        "auc_std": 0.002714531296737608
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.9889983202728837,
+      "auc_std": 0.0027440971838768335,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "miscounting/zh": {
+    "n_positive": 2707,
+    "n_negative": 3000,
+    "fallback_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.7236075078495702,
+        "auc_std": 0.011096196385581384
+      },
+      "lookback": {
+        "auc_mean": 0.9868115494971956,
+        "auc_std": 0.0013910880773990648
+      },
+      "hidden_-1": {
+        "auc_mean": 0.993461710467382,
+        "auc_std": 0.0009816333949603504
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.9944418574777245,
+      "auc_std": 0.0007755950020697532,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "other/en": {
+    "n_positive": 11545,
+    "n_negative": 3000,
+    "fallback_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.7689196621914249,
+        "auc_std": 0.007675008088003465
+      },
+      "lookback": {
+        "auc_mean": 0.9512897358163708,
+        "auc_std": 0.004072657508450602
+      },
+      "hidden_-1": {
+        "auc_mean": 0.9595312545113324,
+        "auc_std": 0.0051560923093758515
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.9658749819546701,
+      "auc_std": 0.0031226557960018376,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "other/fr": {
+    "n_positive": 6757,
+    "n_negative": 3000,
+    "fallback_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.6272427240870595,
+        "auc_std": 0.022906804334503116
+      },
+      "lookback": {
+        "auc_mean": 0.9186064243813845,
+        "auc_std": 0.006798436020534745
+      },
+      "hidden_-1": {
+        "auc_mean": 0.9340287266207952,
+        "auc_std": 0.0054655784132258
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.9486094922746975,
+      "auc_std": 0.004914310169838271,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "other/it": {
+    "n_positive": 10992,
+    "n_negative": 3000,
+    "fallback_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.5947091580285135,
+        "auc_std": 0.015524891928847491
+      },
+      "lookback": {
+        "auc_mean": 0.9318651984668357,
+        "auc_std": 0.004307968320332731
+      },
+      "hidden_-1": {
+        "auc_mean": 0.9360634879256198,
+        "auc_std": 0.004211594755669301
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.9506142232048289,
+      "auc_std": 0.0037068490193761564,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "other/zh": {
+    "n_positive": 11131,
+    "n_negative": 3000,
+    "fallback_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.6330097670399477,
+        "auc_std": 0.007127694560444531
+      },
+      "lookback": {
+        "auc_mean": 0.9189719297916487,
+        "auc_std": 0.0015523176213215729
+      },
+      "hidden_-1": {
+        "auc_mean": 0.9488436802922233,
+        "auc_std": 0.003264995769485633
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.9535265577929286,
+      "auc_std": 0.0030747157135184305,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  }
+}
