@@ -202,7 +202,20 @@ def main():
     p.add_argument("--n_bootstrap", type=int, default=200,
                     help="Bootstrap resamples of the held-out val set used to estimate each AUC's std.")
     p.add_argument("--output", default=str(_THIS_DIR / "aim3_auc_grid.json"))
+    p.add_argument("--save_models_dir", default=None,
+                    help="If set, persist the single best-performing fitted model per cell (whichever "
+                         "of the individual signals or the ensemble has the highest held-out AUC) as a "
+                         "joblib file, plus a models_manifest.json describing which signal/feature "
+                         "columns each one expects -- needed by Aim 4's threshold-tuning and inference "
+                         "steps. Not saved by default (these files are small, but there's no reason to "
+                         "write them if this is just being run to check the AUC grid).")
     args = p.parse_args()
+
+    if args.save_models_dir:
+        import joblib
+        save_dir = Path(args.save_models_dir).resolve()
+        save_dir.mkdir(parents=True, exist_ok=True)
+        manifest = {}
 
     data = load_shards(args.features_dir)
     hidden_signals = sorted(k for k in data if k.startswith("hidden_") and data[k].shape[1] > 0)
@@ -245,6 +258,7 @@ def main():
             passing = []
             feats_tr_for_ensemble, feats_va_for_ensemble = [], []
             row_str = f"{category:22} {language:8} {fallback_str:10}"
+            best = None  # (auc_mean, kind, signal_or_signals, clf, scaler)
             for signal in signals:
                 X_tr = features_for(data, idx_tr, signal)
                 X_va = features_for(data, idx_va, signal)
@@ -252,9 +266,11 @@ def main():
                 if result is None:
                     row_str += f" {'n/a':>14}"
                     continue
-                mean_auc, std_auc, _, _ = result
+                mean_auc, std_auc, clf, scaler = result
                 cell_result["signals"][signal] = {"auc_mean": mean_auc, "auc_std": std_auc}
                 row_str += f" {mean_auc:.3f}+/-{std_auc:.2f}"
+                if best is None or mean_auc > best[0]:
+                    best = (mean_auc, "single", signal, clf, scaler)
                 if mean_auc >= args.gate_auc:
                     passing.append(signal)
                     feats_tr_for_ensemble.append(X_tr)
@@ -265,15 +281,27 @@ def main():
                 X_va_ens = np.concatenate(feats_va_for_ensemble, axis=1)
                 ens_result = auc_holdout(X_tr_ens, y_tr, X_va_ens, y_va, n_bootstrap=args.n_bootstrap)
                 if ens_result is not None:
-                    cell_result["ensemble"] = {"auc_mean": ens_result[0], "auc_std": ens_result[1],
+                    ens_auc, ens_std, ens_clf, ens_scaler = ens_result
+                    cell_result["ensemble"] = {"auc_mean": ens_auc, "auc_std": ens_std,
                                                 "signals_used": passing}
-                    row_str += f" {ens_result[0]:.3f}+/-{ens_result[1]:.2f}"
+                    row_str += f" {ens_auc:.3f}+/-{ens_std:.2f}"
+                    if best is None or ens_auc > best[0]:
+                        best = (ens_auc, "ensemble", passing, ens_clf, ens_scaler)
             else:
                 row_str += f" {'gated off':>14}"
 
             cell_result["status"] = "ok"
             grid[cell_key] = cell_result
             print(row_str)
+
+            if args.save_models_dir and best is not None:
+                best_auc, kind, signal_spec, clf, scaler = best
+                model_path = save_dir / f"{category}_{language}.joblib"
+                joblib.dump({"clf": clf, "scaler": scaler, "kind": kind, "signal": signal_spec}, model_path)
+                manifest[cell_key] = {
+                    "model_path": str(model_path.relative_to(_THIS_DIR)),
+                    "kind": kind, "signal": signal_spec, "auc_mean": best_auc,
+                }
 
     n_cells_tested = sum(1 for v in grid.values() if v["status"] == "ok")
     n_cells_any_signal = sum(1 for v in grid.values() if v["status"] == "ok"
@@ -286,6 +314,12 @@ def main():
     with open(args.output, "w", encoding="utf-8") as f:
         json.dump(grid, f, indent=2)
     print(f"Saved -> {args.output}")
+
+    if args.save_models_dir:
+        manifest_path = save_dir / "models_manifest.json"
+        with open(manifest_path, "w", encoding="utf-8") as f:
+            json.dump(manifest, f, indent=2)
+        print(f"Saved {len(manifest)} fitted model(s) -> {save_dir} (manifest: {manifest_path})")
 
 
 if __name__ == "__main__":
