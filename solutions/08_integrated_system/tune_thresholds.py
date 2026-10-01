@@ -221,7 +221,7 @@ def main():
             unc_threshold, unc_cor, n_records = tuned
             winner = "uncertainty" if unc_cor > ft_cor else "finetuned"
             edge_flag = "  <-- at edge of threshold range, widen --thresholds" if unc_threshold == max(thresholds) else ""
-            print(f"{category:22} {language:8} {unc_threshold:>8.2f} {unc_cor:>8.4f} {ft_cor:>8.4f} "
+            print(f"{category:22} {language:8} {unc_threshold:>8.3f} {unc_cor:>8.4f} {ft_cor:>8.4f} "
                   f"{ft_sol:>7} {winner:>12}  (n={n_records}){edge_flag}")
 
             if winner == "uncertainty":
