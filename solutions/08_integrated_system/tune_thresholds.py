@@ -107,13 +107,24 @@ def tune_cell(data, category, language, model_entry, gold_by_id, thresholds):
     offset_end = data["offset_end"][idx]
     groups = group_by_record(record_ids.tolist())
 
-    # Only records that actually have a gold span of THIS category contribute to
-    # this cell's score (same scoping as scorer_local.py's per_label_language --
-    # see module docstring's scope caveat).
-    relevant_record_ids = {
-        rid for rid, s, e in groups
-        if rid in gold_by_id and any(lb["label"] == category for lb in gold_by_id[rid].get("labels", []))
-    }
+    # ALL extracted records in this language -- NOT just ones with a gold span
+    # of THIS category. An earlier version restricted to gold-span-present
+    # records only, which let the uncertainty side's false positives on
+    # OTHER-category-but-not-this-one records go completely unscored (those
+    # records were simply never included), while the fine-tuned side's score
+    # in finetuned_cell_winners.json WAS penalized for the equivalent mistake
+    # (its predictions were run over the whole val set). That asymmetry favors
+    # the uncertainty side and plausibly explains why its win margins looked
+    # implausibly large (e.g. OCR's held-out scores more than doubling the
+    # fine-tuned side's) on the first run. scorer_local's own per_label_language
+    # logic already correctly skips a record from the average only when BOTH
+    # gold and predicted labels for this category are empty for it -- same
+    # treatment the fine-tuned side already gets -- so widening this to every
+    # extracted record and letting that logic do the filtering makes the two
+    # sides comparable on equal terms. (Fully clean, zero-hallucination
+    # records are STILL never in here at all -- see the module docstring's
+    # remaining scope caveat, which this does not fix.)
+    relevant_record_ids = {rid for rid, s, e in groups if rid in gold_by_id}
     if not relevant_record_ids:
         return None
 
@@ -131,11 +142,20 @@ def tune_cell(data, category, language, model_entry, gold_by_id, thresholds):
 
         result = scorer_local.score_predictions(gold_subset, pred_records, verbose=False)
         cell_key = f"{category}/{language}"
-        cor = result["per_label_language"].get(cell_key, {}).get("cor", float("nan"))
+        cell_stats = result["per_label_language"].get(cell_key, {})
+        cor = cell_stats.get("cor", float("nan"))
         if cor == cor and cor > best_cor:  # NaN-safe (NaN != NaN)
             best_cor, best_threshold = cor, threshold
+            best_n_contributing = cell_stats.get("n_records_with_label", 0)
 
-    return best_threshold, best_cor, len(relevant_record_ids)
+    if best_threshold is None:
+        return None
+    # best_n_contributing: how many records actually had a gold OR predicted span of
+    # this category at the winning threshold (what per_label_language itself averaged
+    # over) -- a more meaningful count than len(relevant_record_ids), which is now
+    # every extracted record in this language regardless of whether this category
+    # ever appears in it (see the widened-scope comment above).
+    return best_threshold, best_cor, best_n_contributing
 
 
 def main():
