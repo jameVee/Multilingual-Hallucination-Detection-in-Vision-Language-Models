@@ -163,7 +163,12 @@ def main():
     p.add_argument("--features_dir", default=str(_UQ_DIR / "features"))
     p.add_argument("--models_dir", default=str(_UQ_DIR / "models"))
     p.add_argument("--finetuned_winners", default=str(_THIS_DIR / "finetuned_cell_winners.json"))
-    p.add_argument("--thresholds", default="0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9")
+    p.add_argument("--thresholds",
+                    default="0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.95,0.98,0.99,0.995",
+                    help="Candidate thresholds to sweep. Densified near 1.0 after a real run "
+                         "picked 0.9 (the old grid's highest value) as 'best' for most cells -- "
+                         "the optimum sitting at the edge of the range it was given is a sign the "
+                         "true optimum is past that edge, not that 0.9 is actually where it peaks.")
     p.add_argument("--output", default=str(_THIS_DIR / "selection_table.json"))
     args = p.parse_args()
 
@@ -215,8 +220,9 @@ def main():
 
             unc_threshold, unc_cor, n_records = tuned
             winner = "uncertainty" if unc_cor > ft_cor else "finetuned"
+            edge_flag = "  <-- at edge of threshold range, widen --thresholds" if unc_threshold == max(thresholds) else ""
             print(f"{category:22} {language:8} {unc_threshold:>8.2f} {unc_cor:>8.4f} {ft_cor:>8.4f} "
-                  f"{ft_sol:>7} {winner:>12}  (n={n_records})")
+                  f"{ft_sol:>7} {winner:>12}  (n={n_records}){edge_flag}")
 
             if winner == "uncertainty":
                 selection[cell_key] = {
