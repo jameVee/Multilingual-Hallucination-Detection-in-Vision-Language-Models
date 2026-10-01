@@ -8,17 +8,33 @@ best fine-tuned solution's score for the same cell
 Aim 4's "selects whichever signal... performed best on validation, locks
 in its tuned threshold" step.
 
-**Scope caveat, stated plainly**: Aim 3's feature shards only cover
-LABELED records (extract_features.py filters to `r.get("labels")`) --
-clean (zero-hallucination) val records were never extracted. This script's
-comparison is restricted to records that have >=1 gold span of the
-category in question, matching how scorer_local.py's own
-`per_label_language` metric is scoped (a record with neither a gold nor a
-predicted span of that label is skipped entirely from the average). It
-does NOT validate how often the uncertainty system would fire a false
-positive on a genuinely clean response, since none were ever run through
-it. Worth closing before trusting this for anything beyond the cell-vs-
+**Scoring scope**: a cell's comparison runs over every val record extracted
+for that language (anything with >=1 gold label of ANY category -- exactly
+what extract_features.py kept), not just records with a gold span of the
+exact category being scored. scorer_local.py's own `per_label_language`
+logic then correctly skips a record from the average only when BOTH its
+gold and predicted labels for this category are empty -- the same
+treatment the fine-tuned side already gets from being run over the whole
+val set. (An earlier version restricted to gold-span-present records only,
+which let the uncertainty side's false positives on other-category records
+go completely unscored -- fixed; see git history for the real run that
+exposed it.)
+
+**Remaining scope caveat, stated plainly**: Aim 3's feature shards only
+cover LABELED records (extract_features.py filters to `r.get("labels")`)
+-- clean (zero-hallucination) val records were never extracted. This
+script still cannot measure how often the uncertainty system would fire a
+false positive on a genuinely clean response, since none were ever run
+through it at all. Worth closing before trusting this beyond the cell-vs-
 cell comparison it's built for.
+
+**Hysteresis span assembly** (added after the first real evaluation showed
+flat-threshold assembly losing 19/20 cells even at a near-1.0 threshold):
+sweeps (start_threshold, continue_threshold, min_span_tokens) instead of a
+single flat threshold, via span_assembly.py's
+merge_positive_tokens_to_spans_hysteresis -- see that function's docstring
+for why. Set --continue_offsets 0 --min_span_tokens_grid 1 to recover the
+old flat-threshold-only behavior exactly.
 
 Usage:
     python tune_thresholds.py \
@@ -47,7 +63,7 @@ if str(_UQ_DIR) not in sys.path:
 
 from solutions.common import data_io, scorer_local
 from train_probes import load_shards, LABEL_ORDER, LANGUAGES
-from span_assembly import merge_positive_tokens_to_spans
+from span_assembly import merge_positive_tokens_to_spans_hysteresis
 
 # Canonical signal order -- MUST match train_probes.py's `signals` list
 # construction, since an ensemble model's feature matrix was fit on
@@ -90,9 +106,11 @@ def group_by_record(record_ids):
     return groups
 
 
-def tune_cell(data, category, language, model_entry, gold_by_id, thresholds):
-    """Returns (best_threshold, best_cor_lbl, n_val_records) or None if
-    there's not enough val data in this language to tune against at all."""
+def tune_cell(data, category, language, model_entry, gold_by_id, configs):
+    """`configs`: list of (start_threshold, continue_threshold, min_span_tokens)
+    tuples to sweep. Returns (best_config, best_cor_lbl, n_val_records) or
+    None if there's not enough val data in this language to tune against at
+    all."""
     lang_mask = data["language"] == language
     idx = np.where(lang_mask)[0]
     if len(idx) == 0:
@@ -129,15 +147,16 @@ def tune_cell(data, category, language, model_entry, gold_by_id, thresholds):
         return None
 
     gold_subset = [gold_by_id[rid] for rid, _, _ in groups if rid in relevant_record_ids]
-    best_threshold, best_cor = None, -1.0
-    for threshold in thresholds:
+    best_config, best_cor, best_n_contributing = None, -1.0, 0
+    for start_t, continue_t, min_span in configs:
         pred_records = []
         for rid, start, end in groups:
             if rid not in relevant_record_ids:
                 continue
             offsets = list(zip(offset_start[start:end].tolist(), offset_end[start:end].tolist()))
             token_probs = probs[start:end].tolist()
-            spans = merge_positive_tokens_to_spans(offsets, token_probs, category, threshold)
+            spans = merge_positive_tokens_to_spans_hysteresis(
+                offsets, token_probs, category, start_t, continue_t, min_span_tokens=min_span)
             pred_records.append({"id": rid, "labels": spans})
 
         result = scorer_local.score_predictions(gold_subset, pred_records, verbose=False)
@@ -145,17 +164,17 @@ def tune_cell(data, category, language, model_entry, gold_by_id, thresholds):
         cell_stats = result["per_label_language"].get(cell_key, {})
         cor = cell_stats.get("cor", float("nan"))
         if cor == cor and cor > best_cor:  # NaN-safe (NaN != NaN)
-            best_cor, best_threshold = cor, threshold
+            best_cor, best_config = cor, (start_t, continue_t, min_span)
             best_n_contributing = cell_stats.get("n_records_with_label", 0)
 
-    if best_threshold is None:
+    if best_config is None:
         return None
     # best_n_contributing: how many records actually had a gold OR predicted span of
-    # this category at the winning threshold (what per_label_language itself averaged
-    # over) -- a more meaningful count than len(relevant_record_ids), which is now
-    # every extracted record in this language regardless of whether this category
-    # ever appears in it (see the widened-scope comment above).
-    return best_threshold, best_cor, best_n_contributing
+    # this category at the winning config (what per_label_language itself averaged
+    # over) -- a more meaningful count than len(relevant_record_ids), which is every
+    # extracted record in this language regardless of whether this category ever
+    # appears in it (see the widened-scope comment above).
+    return best_config, best_cor, best_n_contributing
 
 
 def main():
@@ -163,16 +182,35 @@ def main():
     p.add_argument("--features_dir", default=str(_UQ_DIR / "features"))
     p.add_argument("--models_dir", default=str(_UQ_DIR / "models"))
     p.add_argument("--finetuned_winners", default=str(_THIS_DIR / "finetuned_cell_winners.json"))
-    p.add_argument("--thresholds",
-                    default="0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.95,0.98,0.99,0.995",
-                    help="Candidate thresholds to sweep. Densified near 1.0 after a real run "
-                         "picked 0.9 (the old grid's highest value) as 'best' for most cells -- "
-                         "the optimum sitting at the edge of the range it was given is a sign the "
-                         "true optimum is past that edge, not that 0.9 is actually where it peaks.")
+    p.add_argument("--start_thresholds",
+                    default="0.5,0.7,0.8,0.9,0.95,0.98,0.99,0.995",
+                    help="Candidate start_threshold values (the bar to BEGIN a span). "
+                         "Densified near 1.0 after a real run picked 0.9 (the old grid's highest "
+                         "value) as 'best' for most cells -- the optimum sitting at the edge of the "
+                         "range it was given is a sign the true optimum is past that edge.")
+    p.add_argument("--continue_offsets",
+                    default="0,0.1,0.2,0.3",
+                    help="Candidate (start_threshold - continue_threshold) gaps -- 0 recovers flat "
+                         "single-threshold assembly for that start value. continue_threshold is "
+                         "clipped to >=0.05, and any offset that would push it below that for a given "
+                         "start value is skipped for that start value.")
+    p.add_argument("--min_span_tokens_grid", default="1,2,3",
+                    help="Candidate minimum span lengths (in tokens) to require; shorter assembled "
+                         "spans are dropped. 1 keeps every span regardless of length.")
     p.add_argument("--output", default=str(_THIS_DIR / "selection_table.json"))
     args = p.parse_args()
 
-    thresholds = [float(x) for x in args.thresholds.split(",")]
+    start_thresholds = [float(x) for x in args.start_thresholds.split(",")]
+    continue_offsets = [float(x) for x in args.continue_offsets.split(",")]
+    min_span_grid = [int(x) for x in args.min_span_tokens_grid.split(",")]
+    configs = []
+    for start_t in start_thresholds:
+        for offset in continue_offsets:
+            continue_t = max(0.05, start_t - offset)
+            for min_span in min_span_grid:
+                configs.append((start_t, continue_t, min_span))
+    configs = sorted(set(configs))  # de-dup configs that collapsed to the same values after clipping
+    print(f"Sweeping {len(configs)} (start, continue, min_span_tokens) configs per cell.")
 
     data = load_shards(args.features_dir)
     if "offset_start" not in data:
@@ -197,8 +235,10 @@ def main():
     with open(manifest_path, encoding="utf-8") as f:
         manifest = json.load(f)
 
+    max_start = max(start_thresholds)
     selection = {}
-    print(f"\n{'category':22} {'language':8} {'unc_thr':>8} {'unc_cor':>8} {'ft_cor':>8} {'ft_sol':>7} {'winner':>12}")
+    print(f"\n{'category':22} {'language':8} {'start':>6} {'cont':>6} {'minsp':>5} "
+          f"{'unc_cor':>8} {'ft_cor':>8} {'ft_sol':>7} {'winner':>12}")
     for category in LABEL_ORDER:
         for language in LANGUAGES:
             cell_key = f"{category}/{language}"
@@ -208,25 +248,26 @@ def main():
             entry = manifest[cell_key]
             model_entry = joblib.load(Path(args.models_dir) / f"{category}_{language}.joblib")
 
-            tuned = tune_cell(data, category, language, model_entry, gold_by_id, thresholds)
+            tuned = tune_cell(data, category, language, model_entry, gold_by_id, configs)
             ft_cor = finetuned.get(cell_key, {}).get("cor_lbl", float("nan"))
             ft_sol = finetuned.get(cell_key, {}).get("best_solution", "?")
 
             if tuned is None:
-                print(f"{category:22} {language:8} {'n/a':>8} {'n/a':>8} {ft_cor:>8.4f} {ft_sol:>7} "
-                      f"{'finetuned':>12} (no val data for uncertainty side)")
+                print(f"{category:22} {language:8} {'n/a':>6} {'n/a':>6} {'n/a':>5} {'n/a':>8} {ft_cor:>8.4f} "
+                      f"{ft_sol:>7} {'finetuned':>12} (no val data for uncertainty side)")
                 selection[cell_key] = {"source": "finetuned", "finetuned_solution": ft_sol, "cor_lbl": ft_cor}
                 continue
 
-            unc_threshold, unc_cor, n_records = tuned
+            (start_t, continue_t, min_span), unc_cor, n_records = tuned
             winner = "uncertainty" if unc_cor > ft_cor else "finetuned"
-            edge_flag = "  <-- at edge of threshold range, widen --thresholds" if unc_threshold == max(thresholds) else ""
-            print(f"{category:22} {language:8} {unc_threshold:>8.3f} {unc_cor:>8.4f} {ft_cor:>8.4f} "
-                  f"{ft_sol:>7} {winner:>12}  (n={n_records}){edge_flag}")
+            edge_flag = "  <-- start_threshold at edge of range, widen --start_thresholds" if start_t == max_start else ""
+            print(f"{category:22} {language:8} {start_t:>6.3f} {continue_t:>6.3f} {min_span:>5d} "
+                  f"{unc_cor:>8.4f} {ft_cor:>8.4f} {ft_sol:>7} {winner:>12}  (n={n_records}){edge_flag}")
 
             if winner == "uncertainty":
                 selection[cell_key] = {
-                    "source": "uncertainty", "threshold": unc_threshold, "cor_lbl": unc_cor,
+                    "source": "uncertainty", "start_threshold": start_t, "continue_threshold": continue_t,
+                    "min_span_tokens": min_span, "cor_lbl": unc_cor,
                     "signal": entry["signal"], "n_val_records": n_records,
                 }
             else:

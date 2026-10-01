@@ -122,11 +122,29 @@ def load_shards(features_dir):
     return out
 
 
-def select_split_indices(data, category_idx, language, split, neg_cap, min_positive, rng):
+def select_split_indices(data, category_idx, language, split, neg_cap, min_positive, rng,
+                          negative_mode="clean_only"):
     """Same idea as the old select_indices, but restricted to one `split`
     ('train' or 'val') throughout -- both the primary language-matched
     attempt and the multilingual-pooling fallback stay within that split,
-    so train and val tokens are never mixed."""
+    so train and val tokens are never mixed.
+
+    `negative_mode`:
+      - "clean_only" (default, matches every Aim 3 result reported so far,
+        including the AUC grid H3 was evaluated against): negatives are
+        genuinely hallucination-free tokens only (label_id == CLEAN).
+      - "clean_and_other": negatives are CLEAN tokens *and* every OTHER
+        category's hallucinated tokens (label_id not in {CLEAN, category_idx}).
+        Added after Aim 4's first real evaluation showed probes trained the
+        "clean_only" way -- excellent at "category X vs. clean" -- had
+        never been taught "category X vs. a DIFFERENT category's
+        hallucination", and plausibly false-positive on exactly that once
+        evaluated against realistic (not clean-vs-category-only) data. Use
+        this mode specifically to test/fix that.
+    """
+    if negative_mode not in ("clean_only", "clean_and_other"):
+        raise ValueError(f"negative_mode must be 'clean_only' or 'clean_and_other', got {negative_mode!r}")
+
     label_id = data["label_id"]
     lang = data["language"]
     split_mask = (data["source_split"] == split)
@@ -134,7 +152,10 @@ def select_split_indices(data, category_idx, language, split, neg_cap, min_posit
     def build(lang_mask):
         mask = split_mask & lang_mask
         pos = np.where((label_id == category_idx) & mask)[0]
-        neg_pool = np.where((label_id == CLEAN_LABEL_ID) & mask)[0]
+        if negative_mode == "clean_only":
+            neg_pool = np.where((label_id == CLEAN_LABEL_ID) & mask)[0]
+        else:
+            neg_pool = np.where((label_id != category_idx) & mask)[0]
         if len(neg_pool) > neg_cap:
             neg_pool = rng.choice(neg_pool, size=neg_cap, replace=False)
         return pos, neg_pool
@@ -201,7 +222,18 @@ def main():
     p.add_argument("--gate_auc", type=float, default=0.55)
     p.add_argument("--n_bootstrap", type=int, default=200,
                     help="Bootstrap resamples of the held-out val set used to estimate each AUC's std.")
-    p.add_argument("--output", default=str(_THIS_DIR / "aim3_auc_grid.json"))
+    p.add_argument("--negative_mode", choices=["clean_only", "clean_and_other"], default="clean_only",
+                    help="'clean_only' (default) matches every Aim 3 result reported so far, including "
+                         "the H3 AUC grid: negatives are hallucination-free tokens only. "
+                         "'clean_and_other' also includes every OTHER category's hallucinated tokens as "
+                         "negatives, on both the train-fit and val-eval sides -- added to test/fix a real "
+                         "gap found in Aim 4's first evaluation: a 'clean_only' probe was never taught to "
+                         "distinguish category X from a DIFFERENT category's hallucination, and plausibly "
+                         "false-positived on exactly that once scored against realistic data.")
+    p.add_argument("--output", default=None,
+                    help="Defaults to aim3_auc_grid.json for --negative_mode clean_only, or "
+                         "aim3_auc_grid_clean_and_other.json otherwise -- auto-suffixed so the two "
+                         "modes' results never silently overwrite each other.")
     p.add_argument("--save_models_dir", default=None,
                     help="If set, persist the single best-performing fitted model per cell (whichever "
                          "of the individual signals or the ensemble has the highest held-out AUC) as a "
@@ -210,6 +242,9 @@ def main():
                          "steps. Not saved by default (these files are small, but there's no reason to "
                          "write them if this is just being run to check the AUC grid).")
     args = p.parse_args()
+    if args.output is None:
+        suffix = "" if args.negative_mode == "clean_only" else "_clean_and_other"
+        args.output = str(_THIS_DIR / f"aim3_auc_grid{suffix}.json")
 
     if args.save_models_dir:
         import joblib
@@ -228,9 +263,11 @@ def main():
     for cat_idx, category in enumerate(LABEL_ORDER):
         for language in LANGUAGES:
             pos_tr, neg_tr, fb_tr = select_split_indices(
-                data, cat_idx, language, "train", args.neg_cap, args.min_train_positive, rng)
+                data, cat_idx, language, "train", args.neg_cap, args.min_train_positive, rng,
+                negative_mode=args.negative_mode)
             pos_va, neg_va, fb_va = select_split_indices(
-                data, cat_idx, language, "val", args.neg_cap, args.min_val_positive, rng)
+                data, cat_idx, language, "val", args.neg_cap, args.min_val_positive, rng,
+                negative_mode=args.negative_mode)
             cell_key = f"{category}/{language}"
             fallback_str = f"{'T' if fb_tr else '-'}{'V' if fb_va else '-'}"
 
