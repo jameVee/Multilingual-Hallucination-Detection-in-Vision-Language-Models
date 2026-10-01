@@ -13,10 +13,22 @@ submitted systems, and official metrics — per the thesis proposal's Aim 4.
 | Best-fine-tuned-solution-per-cell table | Done (`compare_cells.py` -> `finetuned_cell_winners.json`) |
 | Span assembly (per-token probs -> spans) | Done, unit-tested (`span_assembly.py`) |
 | Per-token character offsets | Done — ran on nlp2 (`compute_offsets.py`, all 4 shards) |
-| Persist per-cell fitted probe models | Code done (`train_probes.py --save_models_dir`) — **needs to run on nlp2** against the real shards |
-| Per-cell threshold tuning | Not yet started |
+| Persist per-cell fitted probe models | Done — ran on nlp2, 20 `.joblib` files + manifest pushed |
+| Per-cell threshold tuning + uncertainty-vs-finetuned selection | Code done, unit-tested (`tune_thresholds.py` -> `selection_table.json`) — **needs to run on nlp2** (CPU-only, needs the real feature shards) |
 | Uncertainty-only inference script (for new/val/test data) | Not yet started — needs the frozen model + GPU, runs on nlp2 |
 | Final merge (fine-tuned + uncertainty per selection table) | Not yet started |
+
+## `tune_thresholds.py` scope caveat
+
+Aim 3's feature shards only cover **labeled** records (`extract_features.py`
+filters to `r.get("labels")`) — clean (zero-hallucination) val records were
+never extracted. The per-cell comparison this script produces is therefore
+restricted to records that have >=1 gold span of the category in question
+(matching how `per_label_language` itself is scoped). It does **not**
+measure how often the uncertainty system would false-positive on a
+genuinely clean response, since none were ever run through it — worth
+closing before trusting `selection_table.json` for anything beyond the
+cell-vs-cell comparison it's built for.
 
 ## Finding so far: fine-tuned-only per-cell selection already beats any single solution
 
@@ -55,13 +67,19 @@ selection on val, splitting it into a selection half and an eval half, or
 ## Next step (nlp2, CPU-only, no GPU/model needed)
 
 ```bash
-cd solutions/07_uncertainty_quantification
-python train_probes.py --features_dir features/ --save_models_dir models/
+cd solutions/08_integrated_system
+python tune_thresholds.py \
+  --features_dir ../07_uncertainty_quantification/features \
+  --models_dir ../07_uncertainty_quantification/models
 ```
 
-Same command as before, plus `--save_models_dir` — fits and persists the
-single best-performing model (an individual signal, or the ensemble if it
-wins) for each of the 20 cells as a small `.joblib` file under `models/`,
-plus `models/models_manifest.json` summarizing which signal each cell
-uses. These are small (a few KB each) and meant to be committed to git,
-unlike the raw feature shards.
+For each cell: applies that cell's persisted model to every held-out val
+token in that language, sweeps 9 candidate thresholds (0.1-0.9), assembles
+spans at each via `span_assembly.py`, scores each with the real official
+scorer, and keeps whichever threshold gets the best Cor+Lbl. Then compares
+that best achievable uncertainty-side score against the fine-tuned side's
+score for the same cell (`finetuned_cell_winners.json`) and records the
+winner, writing `selection_table.json`. Verified against synthetic
+data (both the single-signal and ensemble feature-concatenation paths,
+and that records with no gold span of the target category are correctly
+excluded from a cell's scoring) -- not yet run against the real shards.
