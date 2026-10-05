@@ -179,7 +179,57 @@ def features_for(data, idx, signal):
     raise ValueError(signal)
 
 
-def auc_holdout(X_train, y_train, X_val, y_val, n_bootstrap=200, seed=42):
+def windowed_features_for(data, idx, signal, window=0):
+    """features_for, widened to a sliding window of `window` neighboring
+    tokens on each side -- adapted directly from Rykov et al. 2025's
+    SmurfCat white-box design (the advisor's own prior work), which builds
+    each token's feature vector from a window of nearby tokens' raw
+    uncertainty scores instead of that token's own value alone, so the
+    classifier can learn local/sequential context directly rather than
+    relying on post-hoc smoothing (e.g. this project's own hysteresis span
+    assembly) bolted on afterward.
+
+    window=0 (the default) returns exactly features_for(data, idx, signal)
+    unchanged -- fully backward compatible with every model already saved.
+
+    Neighbors are zero-padded (not pulled from an adjacent response)
+    whenever they'd fall outside the array entirely OR belong to a
+    DIFFERENT record_id than the center token -- same convention the
+    SmurfCat paper itself uses for tokens outside a valid window ("we set
+    u_j = 0"), just also guarding the response/record boundary, which a
+    single flat token array doesn't mark on its own.
+    """
+    base = features_for(data, idx, signal)  # always 2D, (n, d) -- entropy_nll stacks to (n,2),
+                                             # lookback/hidden_* are already stored as (n, d)
+    if window <= 0:
+        return base
+    record_ids = data["record_id"]
+    n_total = len(record_ids)
+    center_record = record_ids[idx]
+    cols = []
+    for offset in range(-window, window + 1):
+        if offset == 0:
+            cols.append(base)
+            continue
+        neighbor_idx = idx + offset
+        in_bounds = (neighbor_idx >= 0) & (neighbor_idx < n_total)
+        safe_idx = np.clip(neighbor_idx, 0, n_total - 1)
+        same_record = in_bounds & (record_ids[safe_idx] == center_record)
+        neighbor_feats = features_for(data, safe_idx, signal)
+        cols.append(np.where(same_record[:, None], neighbor_feats, 0.0))
+    return np.concatenate(cols, axis=1)
+
+
+def make_classifier(kind):
+    if kind == "logreg":
+        return LogisticRegression(class_weight="balanced", max_iter=2000)
+    if kind == "gbm":
+        from sklearn.ensemble import HistGradientBoostingClassifier
+        return HistGradientBoostingClassifier(max_iter=200, random_state=42)
+    raise ValueError(f"Unknown classifier kind: {kind!r}")
+
+
+def auc_holdout(X_train, y_train, X_val, y_val, n_bootstrap=200, seed=42, classifier="logreg"):
     """Fit on train, evaluate on held-out val -- point estimate plus a
     bootstrap std (resampling val rows with replacement) instead of a CV
     std, since there's no CV here: train and val are already a genuine
@@ -190,8 +240,15 @@ def auc_holdout(X_train, y_train, X_val, y_val, n_bootstrap=200, seed=42):
     Xs_train = scaler.transform(X_train)
     Xs_val = scaler.transform(X_val)
 
-    clf = LogisticRegression(class_weight="balanced", max_iter=2000)
-    clf.fit(Xs_train, y_train)
+    clf = make_classifier(classifier)
+    if classifier == "gbm":
+        # HistGradientBoostingClassifier has no class_weight= param -- balance via
+        # sample_weight instead, same "balanced" semantics as LogisticRegression's.
+        from sklearn.utils.class_weight import compute_sample_weight
+        sw = compute_sample_weight("balanced", y_train)
+        clf.fit(Xs_train, y_train, sample_weight=sw)
+    else:
+        clf.fit(Xs_train, y_train)
     val_probs = clf.predict_proba(Xs_val)[:, 1]
     point_auc = roc_auc_score(y_val, val_probs)
 
@@ -234,6 +291,17 @@ def main():
                     help="Defaults to aim3_auc_grid.json for --negative_mode clean_only, or "
                          "aim3_auc_grid_clean_and_other.json otherwise -- auto-suffixed so the two "
                          "modes' results never silently overwrite each other.")
+    p.add_argument("--window", type=int, default=0,
+                    help="Sliding-window radius: concatenate this many neighboring tokens' raw "
+                         "signal values on each side (zero-padded at response boundaries), instead "
+                         "of using only each token's own value -- adapted from Rykov et al. 2025's "
+                         "SmurfCat white-box design. 0 (default) = exactly the original behavior. "
+                         "NOTE: multiplies feature count by (2*window+1), which is substantial for "
+                         "the 1152-dim lookback signal -- start small (1-2) before going larger.")
+    p.add_argument("--classifier", choices=["logreg", "gbm"], default="logreg",
+                    help="'logreg' (default, original behavior) or 'gbm' (HistGradientBoostingClassifier, "
+                         "can capture nonlinear interactions a linear model can't, e.g. between "
+                         "different attention heads in the lookback signal).")
     p.add_argument("--save_models_dir", default=None,
                     help="If set, persist the single best-performing fitted model per cell (whichever "
                          "of the individual signals or the ensemble has the highest held-out AUC) as a "
@@ -297,9 +365,10 @@ def main():
             row_str = f"{category:22} {language:8} {fallback_str:10}"
             best = None  # (auc_mean, kind, signal_or_signals, clf, scaler)
             for signal in signals:
-                X_tr = features_for(data, idx_tr, signal)
-                X_va = features_for(data, idx_va, signal)
-                result = auc_holdout(X_tr, y_tr, X_va, y_va, n_bootstrap=args.n_bootstrap)
+                X_tr = windowed_features_for(data, idx_tr, signal, args.window)
+                X_va = windowed_features_for(data, idx_va, signal, args.window)
+                result = auc_holdout(X_tr, y_tr, X_va, y_va, n_bootstrap=args.n_bootstrap,
+                                      classifier=args.classifier)
                 if result is None:
                     row_str += f" {'n/a':>14}"
                     continue
@@ -316,7 +385,8 @@ def main():
             if len(passing) >= 2:
                 X_tr_ens = np.concatenate(feats_tr_for_ensemble, axis=1)
                 X_va_ens = np.concatenate(feats_va_for_ensemble, axis=1)
-                ens_result = auc_holdout(X_tr_ens, y_tr, X_va_ens, y_va, n_bootstrap=args.n_bootstrap)
+                ens_result = auc_holdout(X_tr_ens, y_tr, X_va_ens, y_va, n_bootstrap=args.n_bootstrap,
+                                          classifier=args.classifier)
                 if ens_result is not None:
                     ens_auc, ens_std, ens_clf, ens_scaler = ens_result
                     cell_result["ensemble"] = {"auc_mean": ens_auc, "auc_std": ens_std,
@@ -334,10 +404,12 @@ def main():
             if args.save_models_dir and best is not None:
                 best_auc, kind, signal_spec, clf, scaler = best
                 model_path = save_dir / f"{category}_{language}.joblib"
-                joblib.dump({"clf": clf, "scaler": scaler, "kind": kind, "signal": signal_spec}, model_path)
+                joblib.dump({"clf": clf, "scaler": scaler, "kind": kind, "signal": signal_spec,
+                             "window": args.window, "classifier": args.classifier}, model_path)
                 manifest[cell_key] = {
                     "model_path": str(model_path.relative_to(_THIS_DIR)),
                     "kind": kind, "signal": signal_spec, "auc_mean": best_auc,
+                    "window": args.window, "classifier": args.classifier,
                 }
 
     n_cells_tested = sum(1 for v in grid.values() if v["status"] == "ok")

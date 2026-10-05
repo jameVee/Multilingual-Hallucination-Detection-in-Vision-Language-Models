@@ -62,7 +62,7 @@ if str(_UQ_DIR) not in sys.path:
     sys.path.insert(0, str(_UQ_DIR))
 
 from solutions.common import data_io, scorer_local
-from train_probes import load_shards, LABEL_ORDER, LANGUAGES
+from train_probes import load_shards, LABEL_ORDER, LANGUAGES, windowed_features_for
 from span_assembly import merge_positive_tokens_to_spans_hysteresis
 
 # Canonical signal order -- MUST match train_probes.py's `signals` list
@@ -77,21 +77,17 @@ def canonical_order(signal_list, data):
     return [s for s in order if s in signal_list]
 
 
-def features_for(data, idx, signal):
-    if signal == "entropy_nll":
-        return np.stack([data["entropy"][idx], data["nll"][idx]], axis=1)
-    if signal == "lookback":
-        return data["lookback"][idx]
-    if signal.startswith("hidden_"):
-        return data[signal][idx]
-    raise ValueError(signal)
-
-
 def build_feature_matrix(data, idx, model_entry):
+    """Reuses train_probes.py's windowed_features_for (not a local copy) so a
+    windowed model gets fed the SAME window size at inference time it was
+    fit with -- a mismatch here would silently feed the classifier the
+    wrong feature shape/semantics. `model_entry.get("window", 0)` defaults
+    to 0 (no windowing) for any model saved before this option existed."""
+    window = model_entry.get("window", 0)
     if model_entry["kind"] == "single":
-        return features_for(data, idx, model_entry["signal"])
+        return windowed_features_for(data, idx, model_entry["signal"], window)
     signals = canonical_order(model_entry["signal"], data)
-    return np.concatenate([features_for(data, idx, s) for s in signals], axis=1)
+    return np.concatenate([windowed_features_for(data, idx, s, window) for s in signals], axis=1)
 
 
 def group_by_record(record_ids):
