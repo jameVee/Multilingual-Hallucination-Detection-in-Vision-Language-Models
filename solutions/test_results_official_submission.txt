@@ -1,4 +1,4 @@
-	Identifier	Cor+Lbl	Cor	IoU
+Identifier	Cor+Lbl	Cor	IoU
 EN	04_vlm_lora_synthetic_augmented_llm	0.3364	0.4601	0.4048	Edit metadata
 FR	04_vlm_lora_synthetic_augmented_llm	0.3758	0.4835	0.4334	Edit metadata
 IT	04_vlm_lora_synthetic_augmented_llm	0.3692	0.4920	0.4359	Edit metadata
@@ -19,3 +19,7 @@ EN	03_vlm_lora_synthetic_augmented	0.3337	0.4338	0.3860	Edit metadata
 FR	03_vlm_lora_synthetic_augmented	0.3786	0.4706	0.4275	Edit metadata
 IT	03_vlm_lora_synthetic_augmented	0.3863	0.4946	0.4314	Edit metadata
 ZH	03_vlm_lora_synthetic_augmented	0.4426	0.5296	0.4844	Edit metadata
+EN	aim4-percell-selection-finetuned	0.3294	0.4218	0.3742	Edit metadata
+FR	aim4-percell-selection-finetuned	0.3566	0.4504	0.4144	Edit metadata
+IT	aim4-percell-selection-finetuned	0.3741	0.4807	0.4264	Edit metadata
+ZH	aim4-percell-selection-finetuned	0.4274	0.5175	0.4709	Edit metadata
