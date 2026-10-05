@@ -49,6 +49,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from pathlib import Path
 
 import numpy as np
@@ -367,8 +368,12 @@ def main():
             for signal in signals:
                 X_tr = windowed_features_for(data, idx_tr, signal, args.window)
                 X_va = windowed_features_for(data, idx_va, signal, args.window)
+                print(f"  [{category}/{language}] fitting {signal} ({args.classifier}): "
+                      f"{X_tr.shape[0]} train rows x {X_tr.shape[1]} cols...", flush=True)
+                fit_start = time.time()
                 result = auc_holdout(X_tr, y_tr, X_va, y_va, n_bootstrap=args.n_bootstrap,
                                       classifier=args.classifier)
+                print(f"    done in {time.time() - fit_start:.1f}s", flush=True)
                 if result is None:
                     row_str += f" {'n/a':>14}"
                     continue
@@ -385,8 +390,12 @@ def main():
             if len(passing) >= 2:
                 X_tr_ens = np.concatenate(feats_tr_for_ensemble, axis=1)
                 X_va_ens = np.concatenate(feats_va_for_ensemble, axis=1)
+                print(f"  [{category}/{language}] fitting ensemble ({args.classifier}) of {passing}: "
+                      f"{X_tr_ens.shape[0]} train rows x {X_tr_ens.shape[1]} cols...", flush=True)
+                fit_start = time.time()
                 ens_result = auc_holdout(X_tr_ens, y_tr, X_va_ens, y_va, n_bootstrap=args.n_bootstrap,
                                           classifier=args.classifier)
+                print(f"    done in {time.time() - fit_start:.1f}s", flush=True)
                 if ens_result is not None:
                     ens_auc, ens_std, ens_clf, ens_scaler = ens_result
                     cell_result["ensemble"] = {"auc_mean": ens_auc, "auc_std": ens_std,
