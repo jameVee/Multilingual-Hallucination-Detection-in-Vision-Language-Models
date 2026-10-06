@@ -18,17 +18,29 @@ This script replaces that with a WEIGHTED AVERAGE, matching Rykov et al.
 per character, where p_blackbox comes from the already-identified best
 fine-tuned solution for that cell (finetuned_cell_winners.json -- unchanged,
 still a single fixed choice per cell, not re-litigated here) and p_whitebox
-comes from Aim 3's uncertainty probe for that cell. alpha is swept on a grid
-and chosen by the same held-out val scoring already used throughout this
-project. Averaging two reasonable estimates reduces variance instead of
-amplifying it -- that's the specific, principled fix for what went wrong.
+comes from Aim 3's uncertainty probe for that cell. alpha and the span
+assembly settings are chosen by the same held-out val scoring already used
+throughout this project. Averaging two reasonable estimates reduces variance
+instead of amplifying it -- that's the specific, principled fix for what went
+wrong.
 
 Character-level, not token-level: this is the native representation
 scorer_local.py / the official scorer itself uses (data_io.char_labels_to_vector
 already does exactly this accumulation for gold spans), so the blended
-probability vector can be fed straight into the existing hysteresis span
-assembly (span_assembly.py) unchanged -- a list of (char_index, char_index+1)
-"offsets" is all it needs, no new merge logic required.
+probability vector goes straight into the hysteresis span assembly
+(span_assembly.py) -- a list of (char_index, char_index+1) "offsets" is all it
+needs.
+
+Search per cell (val only), two stages:
+  Stage 1: alpha x flat (start == continue) threshold grid. Cheap; used only to
+           rank the alphas.
+  Stage 2: for the top-K alphas from stage 1 PLUS the two endpoints -- 0.0 (pure
+           uncertainty, so the uncertainty-only number here is directly comparable
+           to tune_thresholds.py) and 1.0 (pure fine-tuned) -- a hysteresis sweep
+           over start_threshold x continue offset x min_span_tokens. The start and
+           offset grids match tune_thresholds.py's, extended with 0.999 because the
+           uncertainty-only sweep kept selecting the top of its range.
+The best config seen across both stages is kept.
 
 Records with NO Aim 3 features at all (clean, zero-hallucination val
 records -- extract_features.py never extracted these) get p_whitebox = 0
@@ -39,7 +51,7 @@ nothing" is exactly the right behavior for it, not a gap being papered over.
 Usage:
     python tune_blend.py \
         --features_dir ../07_uncertainty_quantification/features \
-        --models_dir ../07_uncertainty_quantification/models_clean_and_other
+        --models_dir ../07_uncertainty_quantification/models_gbm
 """
 from __future__ import annotations
 
@@ -72,6 +84,8 @@ SOLUTIONS = {
     "06": "06_vlm_lora_synthetic_tuned_llm",
 }
 
+MIN_CONTINUE_THRESHOLD = 0.05  # same floor tune_thresholds.py applies to continue_threshold
+
 
 def whitebox_predictions_by_record(data, language, model_entry):
     """{record_id: (offsets, token_probs)} for every val token in this
@@ -102,14 +116,17 @@ def char_probs_from_tokens(offsets, token_probs, text_len):
     return char_probs
 
 
-def tune_cell_blend(category, language, bb_by_id, wb_by_record, gold_by_id, alphas, flat_thresholds):
-    """Sweeps alpha x a flat (start==continue) threshold grid. Returns
-    (best_alpha, best_threshold, best_cor, n_records) or None."""
+def tune_cell_blend(category, language, bb_by_id, wb_by_record, gold_by_id, alphas,
+                    flat_thresholds, start_grid, continue_offsets, min_span_grid, top_k_alphas):
+    """Two-stage search described in the module docstring. Returns a dict with the
+    chosen config and the uncertainty-only comparator, or None if nothing scored."""
     record_ids = sorted(bb_by_id)  # full language coverage -- every val record this solution predicted on
     if not record_ids:
         return None
     text_lens = {rid: len(gold_by_id[rid]["response"]) for rid in record_ids if rid in gold_by_id}
     record_ids = [rid for rid in record_ids if rid in text_lens]
+    if not record_ids:
+        return None
 
     bb_vecs = {}
     wb_vecs = {}
@@ -124,28 +141,74 @@ def tune_cell_blend(category, language, bb_by_id, wb_by_record, gold_by_id, alph
         else:
             wb_vecs[rid] = np.zeros(text_len)  # never extracted -> genuinely clean record, 0 is correct
 
+    char_offsets = {rid: [(i, i + 1) for i in range(text_lens[rid])] for rid in record_ids}
     gold_subset = [gold_by_id[rid] for rid in record_ids]
     cell_key = f"{category}/{language}"
-    best = None
-    for alpha in alphas:
-        blended = {rid: alpha * bb_vecs[rid] + (1 - alpha) * wb_vecs[rid] for rid in record_ids}
-        for threshold in flat_thresholds:
-            pred_records = []
-            for rid in record_ids:
-                vec = blended[rid]
-                char_offsets = [(i, i + 1) for i in range(len(vec))]
-                spans = merge_positive_tokens_to_spans_hysteresis(
-                    char_offsets, vec.tolist(), category, threshold, threshold, min_span_tokens=1)
-                pred_records.append({"id": rid, "labels": spans})
-            result = scorer_local.score_predictions(gold_subset, pred_records, verbose=False)
-            cor = result["per_label_language"].get(cell_key, {}).get("cor", float("nan"))
-            if cor == cor and (best is None or cor > best[0]):
-                best = (cor, alpha, threshold)
 
-    if best is None:
+    def blend_all(alpha):
+        return {rid: alpha * bb_vecs[rid] + (1 - alpha) * wb_vecs[rid] for rid in record_ids}
+
+    def score(blended, start, cont, min_span):
+        pred_records = []
+        for rid in record_ids:
+            spans = merge_positive_tokens_to_spans_hysteresis(
+                char_offsets[rid], blended[rid].tolist(), category, start, cont, min_span_tokens=min_span)
+            pred_records.append({"id": rid, "labels": spans})
+        result = scorer_local.score_predictions(gold_subset, pred_records, verbose=False)
+        return result["per_label_language"].get(cell_key, {}).get("cor", float("nan"))
+
+    # Each candidate: (cor, alpha, start_threshold, continue_threshold, min_span_tokens)
+    stage1 = []
+    for alpha in alphas:
+        blended = blend_all(alpha)
+        for t in flat_thresholds:
+            stage1.append((score(blended, t, t, 1), alpha, t, t, 1))
+
+    def stage1_best(alpha):
+        vals = [c[0] for c in stage1 if c[1] == alpha and c[0] == c[0]]
+        return max(vals) if vals else float("-inf")
+
+    ranked = sorted(alphas, key=stage1_best, reverse=True)
+    stage2_alphas = []
+    for a in ranked[:top_k_alphas] + [0.0, 1.0]:
+        if a in alphas and a not in stage2_alphas:
+            stage2_alphas.append(a)
+
+    seen = {(a, round(t, 6), round(c, 6), m) for _, a, t, c, m in stage1}
+    stage2 = []
+    for alpha in stage2_alphas:
+        blended = blend_all(alpha)
+        for start in start_grid:
+            for offset in continue_offsets:
+                cont = round(start - offset, 6)
+                if cont < MIN_CONTINUE_THRESHOLD:
+                    continue
+                for min_span in min_span_grid:
+                    key = (alpha, round(start, 6), cont, min_span)
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    stage2.append((score(blended, start, cont, min_span), alpha, start, cont, min_span))
+
+    valid = [c for c in stage1 + stage2 if c[0] == c[0]]
+    if not valid:
         return None
-    cor, alpha, threshold = best
-    return alpha, threshold, cor, len(record_ids)
+    # max() returns the FIRST maximal candidate, so ties go to the earlier (simpler,
+    # stage-1) config -- a deliberate bias toward the least complicated explanation.
+    best = max(valid, key=lambda c: c[0])
+    uncert = [c for c in stage2 if c[1] == 0.0 and c[0] == c[0]]
+    uncert_best = max(uncert, key=lambda c: c[0]) if uncert else None
+
+    cor, alpha, start, cont, min_span = best
+    return {
+        "alpha": alpha, "start_threshold": start, "continue_threshold": cont,
+        "min_span_tokens": min_span, "cor_lbl": cor, "n_records": len(record_ids),
+        "n_configs_evaluated": len(stage1) + len(stage2),
+        "uncertainty_only": (
+            {"cor_lbl": uncert_best[0], "start_threshold": uncert_best[2],
+             "continue_threshold": uncert_best[3], "min_span_tokens": uncert_best[4]}
+            if uncert_best else None),
+    }
 
 
 def main():
@@ -154,17 +217,26 @@ def main():
     p.add_argument("--models_dir", default=str(_UQ_DIR / "models"))
     p.add_argument("--finetuned_winners", default=str(_THIS_DIR / "finetuned_cell_winners.json"))
     p.add_argument("--alphas", default="0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0",
-                    help="Blend weight for the fine-tuned side; 1.0 = pure fine-tuned (should "
-                         "reproduce finetuned_cell_winners.json's number almost exactly -- a "
-                         "useful sanity check), 0.0 = pure uncertainty.")
+                    help="Blend weight for the fine-tuned side; 1.0 = pure fine-tuned, "
+                         "0.0 = pure uncertainty.")
     p.add_argument("--flat_thresholds", default="0.3,0.5,0.7,0.9",
-                    help="Flat start==continue hysteresis thresholds applied to the BLENDED "
-                         "probability vector.")
+                    help="Stage 1: flat start==continue thresholds used only to rank alphas.")
+    p.add_argument("--start_thresholds", default="0.5,0.7,0.8,0.9,0.95,0.98,0.99,0.995,0.999",
+                    help="Stage 2: candidate start_threshold values.")
+    p.add_argument("--continue_offsets", default="0,0.1,0.2,0.3",
+                    help="Stage 2: candidate (start - continue) gaps; 0 = flat for that start.")
+    p.add_argument("--min_span_tokens_grid", default="1,2,3",
+                    help="Stage 2: candidate minimum span lengths in tokens.")
+    p.add_argument("--top_k_alphas", type=int, default=3,
+                    help="Stage 2 refines this many best alphas from stage 1 (plus 0.0 and 1.0).")
     p.add_argument("--output", default=str(_THIS_DIR / "blend_selection_table.json"))
     args = p.parse_args()
 
     alphas = [float(x) for x in args.alphas.split(",")]
     flat_thresholds = [float(x) for x in args.flat_thresholds.split(",")]
+    start_grid = [float(x) for x in args.start_thresholds.split(",")]
+    continue_offsets = [float(x) for x in args.continue_offsets.split(",")]
+    min_span_grid = [int(x) for x in args.min_span_tokens_grid.split(",")]
 
     data = load_shards(args.features_dir)
     if "offset_start" not in data:
@@ -196,8 +268,8 @@ def main():
         return bb_cache[cache_key]
 
     selection = {}
-    print(f"\n{'category':22} {'language':8} {'alpha':>6} {'thresh':>7} {'blend_cor':>10} "
-          f"{'pure_ft_cor':>12} {'improved?':>10}")
+    print(f"\n{'category':22} {'language':8} {'alpha':>6} {'start':>6} {'cont':>6} {'minsp':>5} "
+          f"{'blend':>8} {'uncert':>8} {'pure_ft':>8} {'improved':>9}")
     for category in LABEL_ORDER:
         for language in LANGUAGES:
             cell_key = f"{category}/{language}"
@@ -212,19 +284,30 @@ def main():
             wb_by_record = whitebox_predictions_by_record(data, language, model_entry)
 
             result = tune_cell_blend(category, language, bb_by_id, wb_by_record, gold_by_id,
-                                      alphas, flat_thresholds)
+                                      alphas, flat_thresholds, start_grid, continue_offsets,
+                                      min_span_grid, args.top_k_alphas)
             if result is None:
                 print(f"{category:22} {language:8}   no data -- skipping")
                 continue
-            alpha, threshold, blend_cor, n_records = result
+            blend_cor = result["cor_lbl"]
             improved = blend_cor > pure_ft_cor
-            print(f"{category:22} {language:8} {alpha:>6.1f} {threshold:>7.2f} {blend_cor:>10.4f} "
-                  f"{pure_ft_cor:>12.4f} {'YES' if improved else 'no':>10}")
+            uncert = result["uncertainty_only"]["cor_lbl"] if result["uncertainty_only"] else float("nan")
+            print(f"{category:22} {language:8} {result['alpha']:>6.1f} {result['start_threshold']:>6.3f} "
+                  f"{result['continue_threshold']:>6.3f} {result['min_span_tokens']:>5d} "
+                  f"{blend_cor:>8.4f} {uncert:>8.4f} {pure_ft_cor:>8.4f} {'YES' if improved else 'no':>9}")
 
             selection[cell_key] = {
-                "finetuned_solution": winner_sol, "alpha": alpha, "threshold": threshold,
-                "blend_cor_lbl": blend_cor, "pure_finetuned_cor_lbl": pure_ft_cor,
-                "improved_over_pure_finetuned": improved, "n_records": n_records,
+                "finetuned_solution": winner_sol,
+                "alpha": result["alpha"],
+                "start_threshold": result["start_threshold"],
+                "continue_threshold": result["continue_threshold"],
+                "min_span_tokens": result["min_span_tokens"],
+                "blend_cor_lbl": blend_cor,
+                "uncertainty_only": result["uncertainty_only"],
+                "pure_finetuned_cor_lbl": pure_ft_cor,
+                "improved_over_pure_finetuned": improved,
+                "n_records": result["n_records"],
+                "n_configs_evaluated": result["n_configs_evaluated"],
             }
 
     n_improved = sum(1 for v in selection.values() if v["improved_over_pure_finetuned"])

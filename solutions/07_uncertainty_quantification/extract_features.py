@@ -484,6 +484,8 @@ def process_record(record, model, processor, device, image_token_id, hidden_laye
         "lookback_columns": lookback_cols,
         "hidden": {str(k): v.numpy() for k, v in hidden_feats.items()},
         "label_id": np.array(label_ids, dtype=np.int8),
+        "offset_start": np.array([s for s, _ in offsets], dtype=np.int32),
+        "offset_end": np.array([e for _, e in offsets], dtype=np.int32),
         "language": record.get("language", ""),
         "record_id": record["id"],
         "approx_alignment": approx_alignment,
@@ -492,7 +494,11 @@ def process_record(record, model, processor, device, image_token_id, hidden_laye
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--split", choices=["train", "val"], default="val")
+    p.add_argument("--split", choices=["train", "val", "test"], default="val",
+                    help="'test' extracts every record of data/test.jsonl regardless of labels "
+                         "(test has none) -- used for the final blended test submission, not for "
+                         "fitting probes. Offsets are saved for all splits, so test shards are "
+                         "ready for the blend without a separate compute_offsets run.")
     p.add_argument("--model_id", default=DEFAULT_MODEL_ID)
     p.add_argument("--gpu_index", type=int, default=None)
     p.add_argument("--shard_id", type=int, default=0)
@@ -550,9 +556,10 @@ def main():
     print(f"image_token_id = {image_token_id} "
           f"(decoded: {processor.tokenizer.convert_ids_to_tokens([image_token_id])})")
 
-    path = data_io.TRAIN_FILE if args.split == "train" else data_io.VAL_FILE
+    path = {"train": data_io.TRAIN_FILE, "val": data_io.VAL_FILE, "test": data_io.TEST_FILE}[args.split]
     records = data_io.load_jsonl(path)
-    records = [r for r in records if r.get("labels")]  # skip clean-only records: no positive tokens possible
+    if args.split != "test":
+        records = [r for r in records if r.get("labels")]  # skip clean-only records: no positive tokens possible
     records = records[args.shard_id::args.num_shards]
     if args.max_examples:
         records = records[:args.max_examples]
@@ -561,7 +568,7 @@ def main():
     print(f"Processing {len(records)} records from {args.split} (shard {args.shard_id}/{args.num_shards})")
 
     shard_data = {"entropy": [], "nll": [], "label_id": [], "language": [], "record_id": [],
-                  "approx_alignment": [], "lookback": []}
+                  "approx_alignment": [], "lookback": [], "offset_start": [], "offset_end": []}
     hidden_shard = {idx: [] for idx in hidden_layers}
     lookback_columns_holder = [None]
 
@@ -574,6 +581,10 @@ def main():
             "entropy": np.concatenate(shard_data["entropy"]) if shard_data["entropy"] else np.zeros(0, np.float32),
             "nll": np.concatenate(shard_data["nll"]) if shard_data["nll"] else np.zeros(0, np.float32),
             "label_id": np.concatenate(shard_data["label_id"]) if shard_data["label_id"] else np.zeros(0, np.int8),
+            "offset_start": (np.concatenate(shard_data["offset_start"])
+                             if shard_data["offset_start"] else np.zeros(0, np.int32)),
+            "offset_end": (np.concatenate(shard_data["offset_end"])
+                           if shard_data["offset_end"] else np.zeros(0, np.int32)),
             "language": np.array(shard_data["language"], dtype=object),
             "record_id": np.array(shard_data["record_id"], dtype=object),
             "approx_alignment": np.array(shard_data["approx_alignment"], dtype=bool),
@@ -615,6 +626,8 @@ def main():
         shard_data["entropy"].append(result["entropy"])
         shard_data["nll"].append(result["nll"])
         shard_data["label_id"].append(result["label_id"])
+        shard_data["offset_start"].append(result["offset_start"])
+        shard_data["offset_end"].append(result["offset_end"])
         shard_data["language"].extend([result["language"]] * result["n_tokens"])
         shard_data["record_id"].extend([result["record_id"]] * result["n_tokens"])
         shard_data["approx_alignment"].extend([result["approx_alignment"]] * result["n_tokens"])

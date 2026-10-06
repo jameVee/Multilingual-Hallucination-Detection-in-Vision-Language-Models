@@ -88,7 +88,7 @@ def _source_split_of(filename: str) -> str:
 
 
 def load_shards(features_dir):
-    files = sorted(Path(features_dir).glob("*_shard*.npz"))
+    files = sorted(f for f in Path(features_dir).glob("*_shard*.npz") if not f.name.startswith("test_shard"))
     if not files:
         raise FileNotFoundError(f"No shard files found under {features_dir}")
     merged = {}
