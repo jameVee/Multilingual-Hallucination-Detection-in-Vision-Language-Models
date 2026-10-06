@@ -51,7 +51,7 @@ nothing" is exactly the right behavior for it, not a gap being papered over.
 Usage:
     python tune_blend.py \
         --features_dir ../07_uncertainty_quantification/features \
-        --models_dir ../07_uncertainty_quantification/models_gbm
+        --models_dir ../07_uncertainty_quantification/models_clean_and_other_gbm_w0
 """
 from __future__ import annotations
 
@@ -214,7 +214,9 @@ def tune_cell_blend(category, language, bb_by_id, wb_by_record, gold_by_id, alph
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--features_dir", default=str(_UQ_DIR / "features"))
-    p.add_argument("--models_dir", default=str(_UQ_DIR / "models"))
+    p.add_argument("--models_dir", required=True,
+                    help="Folder with models_manifest.json and {category}_{language}.joblib, e.g. "
+                         "../07_uncertainty_quantification/models_clean_and_other_gbm_w0")
     p.add_argument("--finetuned_winners", default=str(_THIS_DIR / "finetuned_cell_winners.json"))
     p.add_argument("--alphas", default="0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0",
                     help="Blend weight for the fine-tuned side; 1.0 = pure fine-tuned, "

@@ -176,7 +176,9 @@ def tune_cell(data, category, language, model_entry, gold_by_id, configs):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--features_dir", default=str(_UQ_DIR / "features"))
-    p.add_argument("--models_dir", default=str(_UQ_DIR / "models"))
+    p.add_argument("--models_dir", required=True,
+                    help="Folder with models_manifest.json and {category}_{language}.joblib, e.g. "
+                         "../07_uncertainty_quantification/models_clean_and_other_gbm_w0")
     p.add_argument("--finetuned_winners", default=str(_THIS_DIR / "finetuned_cell_winners.json"))
     p.add_argument("--start_thresholds",
                     default="0.5,0.7,0.8,0.9,0.95,0.98,0.99,0.995",

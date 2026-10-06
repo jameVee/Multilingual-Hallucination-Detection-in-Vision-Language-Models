@@ -17,7 +17,7 @@ Needs test_shard*.npz from `extract_features.py --split test` (nlp2 only).
 Usage:
     python apply_blend_test.py \
         --test_features_dir ../07_uncertainty_quantification/features \
-        --models_dir ../07_uncertainty_quantification/models_gbm \
+        --models_dir ../07_uncertainty_quantification/models_clean_and_other_gbm_w0 \
         --blend_table blend_selection_table.json \
         --output_dir test_predictions_blend
     python ../../participant_kit/format_checker.py test_predictions_blend/test_predictions_blend.*.jsonl \
@@ -73,7 +73,9 @@ def load_test_shards(features_dir):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--test_features_dir", default=str(_UQ_DIR / "features"))
-    p.add_argument("--models_dir", default=str(_UQ_DIR / "models_gbm"))
+    p.add_argument("--models_dir", required=True,
+                    help="Folder with models_manifest.json and {category}_{language}.joblib -- "
+                         "must be the same folder tune_blend.py used to pick blend_table.")
     p.add_argument("--blend_table", default=str(_THIS_DIR / "blend_selection_table.json"))
     p.add_argument("--output_dir", default=str(_THIS_DIR / "test_predictions_blend"))
     args = p.parse_args()

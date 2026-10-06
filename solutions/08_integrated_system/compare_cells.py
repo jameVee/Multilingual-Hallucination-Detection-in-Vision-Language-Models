@@ -2,7 +2,7 @@
 the 20 (category, language) cells, on val -- the "best fine-tuned option
 per cell" half of Aim 4's selection table (the other half, once available,
 is which Aim 3 uncertainty signal wins each cell; see
-solutions/07_uncertainty_quantification/aim3_auc_grid.json).
+solutions/07_uncertainty_quantification/aim3_auc_clean_only_logreg_w0.json).
 
 Runs entirely on already-committed local data (no GPU, no nlp2 needed):
 each of solutions 02-06 already has a val_predictions.jsonl in the repo.
