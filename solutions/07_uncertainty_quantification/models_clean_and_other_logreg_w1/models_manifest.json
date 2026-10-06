@@ -1,0 +1,208 @@
+{
+  "invention/en": {
+    "model_path": "models_windowed/invention_en.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.6667752118904311,
+    "window": 1,
+    "classifier": "logreg"
+  },
+  "invention/fr": {
+    "model_path": "models_windowed/invention_fr.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.6898769235004267,
+    "window": 1,
+    "classifier": "logreg"
+  },
+  "invention/it": {
+    "model_path": "models_windowed/invention_it.joblib",
+    "kind": "single",
+    "signal": "hidden_-1",
+    "auc_mean": 0.6810068383931309,
+    "window": 1,
+    "classifier": "logreg"
+  },
+  "invention/zh": {
+    "model_path": "models_windowed/invention_zh.joblib",
+    "kind": "single",
+    "signal": "hidden_-1",
+    "auc_mean": 0.7000517875303136,
+    "window": 1,
+    "classifier": "logreg"
+  },
+  "mischaracterization/en": {
+    "model_path": "models_windowed/mischaracterization_en.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.6667182651254817,
+    "window": 1,
+    "classifier": "logreg"
+  },
+  "mischaracterization/fr": {
+    "model_path": "models_windowed/mischaracterization_fr.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.7419814814814815,
+    "window": 1,
+    "classifier": "logreg"
+  },
+  "mischaracterization/it": {
+    "model_path": "models_windowed/mischaracterization_it.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.7036925103232239,
+    "window": 1,
+    "classifier": "logreg"
+  },
+  "mischaracterization/zh": {
+    "model_path": "models_windowed/mischaracterization_zh.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.682478892027621,
+    "window": 1,
+    "classifier": "logreg"
+  },
+  "OCR/en": {
+    "model_path": "models_windowed/OCR_en.joblib",
+    "kind": "single",
+    "signal": "entropy_nll",
+    "auc_mean": 0.7250389190587019,
+    "window": 1,
+    "classifier": "logreg"
+  },
+  "OCR/fr": {
+    "model_path": "models_windowed/OCR_fr.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.9816685823754789,
+    "window": 1,
+    "classifier": "logreg"
+  },
+  "OCR/it": {
+    "model_path": "models_windowed/OCR_it.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.9789488017429193,
+    "window": 1,
+    "classifier": "logreg"
+  },
+  "OCR/zh": {
+    "model_path": "models_windowed/OCR_zh.joblib",
+    "kind": "single",
+    "signal": "hidden_-1",
+    "auc_mean": 0.9435055555555557,
+    "window": 1,
+    "classifier": "logreg"
+  },
+  "miscounting/en": {
+    "model_path": "models_windowed/miscounting_en.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.9448472727272726,
+    "window": 1,
+    "classifier": "logreg"
+  },
+  "miscounting/fr": {
+    "model_path": "models_windowed/miscounting_fr.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.9704945533769063,
+    "window": 1,
+    "classifier": "logreg"
+  },
+  "miscounting/it": {
+    "model_path": "models_windowed/miscounting_it.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.96098647469459,
+    "window": 1,
+    "classifier": "logreg"
+  },
+  "miscounting/zh": {
+    "model_path": "models_windowed/miscounting_zh.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.973118208516887,
+    "window": 1,
+    "classifier": "logreg"
+  },
+  "other/en": {
+    "model_path": "models_windowed/other_en.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.845712225625319,
+    "window": 1,
+    "classifier": "logreg"
+  },
+  "other/fr": {
+    "model_path": "models_windowed/other_fr.joblib",
+    "kind": "single",
+    "signal": "entropy_nll",
+    "auc_mean": 0.74337900078064,
+    "window": 1,
+    "classifier": "logreg"
+  },
+  "other/it": {
+    "model_path": "models_windowed/other_it.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.889617165575304,
+    "window": 1,
+    "classifier": "logreg"
+  },
+  "other/zh": {
+    "model_path": "models_windowed/other_zh.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.9078756894357233,
+    "window": 1,
+    "classifier": "logreg"
+  }
+}

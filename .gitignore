@@ -27,3 +27,7 @@ __pycache__/
 # OS cruft
 .DS_Store
 Thumbs.db
+solutions/07_uncertainty_quantification/models*/*.joblib
+solutions/07_uncertainty_quantification/features*/
+solutions/*/checkpoint*/
+.venv/

@@ -1,0 +1,149 @@
+{
+  "invention/en": {
+    "model_path": "models_clean_and_other/invention_en.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.6919245383450027
+  },
+  "invention/fr": {
+    "model_path": "models_clean_and_other/invention_fr.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.7346313623475651
+  },
+  "invention/it": {
+    "model_path": "models_clean_and_other/invention_it.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.7044566697332106
+  },
+  "invention/zh": {
+    "model_path": "models_clean_and_other/invention_zh.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.7210169756708128
+  },
+  "mischaracterization/en": {
+    "model_path": "models_clean_and_other/mischaracterization_en.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.6577272727272728
+  },
+  "mischaracterization/fr": {
+    "model_path": "models_clean_and_other/mischaracterization_fr.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.7441007553606238
+  },
+  "mischaracterization/it": {
+    "model_path": "models_clean_and_other/mischaracterization_it.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.7152529545778157
+  },
+  "mischaracterization/zh": {
+    "model_path": "models_clean_and_other/mischaracterization_zh.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.7020638731952291
+  },
+  "OCR/en": {
+    "model_path": "models_clean_and_other/OCR_en.joblib",
+    "kind": "single",
+    "signal": "hidden_-1",
+    "auc_mean": 0.7754553917765709
+  },
+  "OCR/fr": {
+    "model_path": "models_clean_and_other/OCR_fr.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.9774367816091953
+  },
+  "OCR/it": {
+    "model_path": "models_clean_and_other/OCR_it.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.9793605664488017
+  },
+  "OCR/zh": {
+    "model_path": "models_clean_and_other/OCR_zh.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.9361708333333333
+  },
+  "miscounting/en": {
+    "model_path": "models_clean_and_other/miscounting_en.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.936510303030303
+  },
+  "miscounting/fr": {
+    "model_path": "models_clean_and_other/miscounting_fr.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.9632962962962963
+  },
+  "miscounting/it": {
+    "model_path": "models_clean_and_other/miscounting_it.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.9471483420593368
+  },
+  "miscounting/zh": {
+    "model_path": "models_clean_and_other/miscounting_zh.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.9692496328928046
+  },
+  "other/en": {
+    "model_path": "models_clean_and_other/other_en.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.8296226391015824
+  },
+  "other/fr": {
+    "model_path": "models_clean_and_other/other_fr.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.7051733021077283
+  },
+  "other/it": {
+    "model_path": "models_clean_and_other/other_it.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.8637130495790458
+  },
+  "other/zh": {
+    "model_path": "models_clean_and_other/other_zh.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.8885585490029697
+  }
+}

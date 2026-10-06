@@ -1,0 +1,203 @@
+{
+  "invention/en": {
+    "model_path": "models_gbm/invention_en.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.7142651189452565,
+    "window": 0,
+    "classifier": "gbm"
+  },
+  "invention/fr": {
+    "model_path": "models_gbm/invention_fr.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.7597985107495802,
+    "window": 0,
+    "classifier": "gbm"
+  },
+  "invention/it": {
+    "model_path": "models_gbm/invention_it.joblib",
+    "kind": "single",
+    "signal": "hidden_-1",
+    "auc_mean": 0.708510027598896,
+    "window": 0,
+    "classifier": "gbm"
+  },
+  "invention/zh": {
+    "model_path": "models_gbm/invention_zh.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.7533325510443558,
+    "window": 0,
+    "classifier": "gbm"
+  },
+  "mischaracterization/en": {
+    "model_path": "models_gbm/mischaracterization_en.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.6894569405394146,
+    "window": 0,
+    "classifier": "gbm"
+  },
+  "mischaracterization/fr": {
+    "model_path": "models_gbm/mischaracterization_fr.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.7702096734892787,
+    "window": 0,
+    "classifier": "gbm"
+  },
+  "mischaracterization/it": {
+    "model_path": "models_gbm/mischaracterization_it.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.7603645877829986,
+    "window": 0,
+    "classifier": "gbm"
+  },
+  "mischaracterization/zh": {
+    "model_path": "models_gbm/mischaracterization_zh.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.7423038292529818,
+    "window": 0,
+    "classifier": "gbm"
+  },
+  "OCR/en": {
+    "model_path": "models_gbm/OCR_en.joblib",
+    "kind": "single",
+    "signal": "hidden_-1",
+    "auc_mean": 0.7080227566589087,
+    "window": 0,
+    "classifier": "gbm"
+  },
+  "OCR/fr": {
+    "model_path": "models_gbm/OCR_fr.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.9874865900383143,
+    "window": 0,
+    "classifier": "gbm"
+  },
+  "OCR/it": {
+    "model_path": "models_gbm/OCR_it.joblib",
+    "kind": "single",
+    "signal": "hidden_-1",
+    "auc_mean": 0.9799934640522876,
+    "window": 0,
+    "classifier": "gbm"
+  },
+  "OCR/zh": {
+    "model_path": "models_gbm/OCR_zh.joblib",
+    "kind": "single",
+    "signal": "hidden_-1",
+    "auc_mean": 0.9561555555555555,
+    "window": 0,
+    "classifier": "gbm"
+  },
+  "miscounting/en": {
+    "model_path": "models_gbm/miscounting_en.joblib",
+    "kind": "single",
+    "signal": "hidden_-1",
+    "auc_mean": 0.9547066666666666,
+    "window": 0,
+    "classifier": "gbm"
+  },
+  "miscounting/fr": {
+    "model_path": "models_gbm/miscounting_fr.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.9700239651416123,
+    "window": 0,
+    "classifier": "gbm"
+  },
+  "miscounting/it": {
+    "model_path": "models_gbm/miscounting_it.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.9374280104712043,
+    "window": 0,
+    "classifier": "gbm"
+  },
+  "miscounting/zh": {
+    "model_path": "models_gbm/miscounting_zh.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.9793935389133627,
+    "window": 0,
+    "classifier": "gbm"
+  },
+  "other/en": {
+    "model_path": "models_gbm/other_en.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.880209035222052,
+    "window": 0,
+    "classifier": "gbm"
+  },
+  "other/fr": {
+    "model_path": "models_gbm/other_fr.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.8574170569867292,
+    "window": 0,
+    "classifier": "gbm"
+  },
+  "other/it": {
+    "model_path": "models_gbm/other_it.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.9319666354848768,
+    "window": 0,
+    "classifier": "gbm"
+  },
+  "other/zh": {
+    "model_path": "models_gbm/other_zh.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.931582378730024,
+    "window": 0,
+    "classifier": "gbm"
+  }
+}
