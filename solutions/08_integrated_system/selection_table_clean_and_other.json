@@ -1,0 +1,110 @@
+{
+  "invention/en": {
+    "source": "finetuned",
+    "finetuned_solution": "06",
+    "cor_lbl": 0.20206397617260596
+  },
+  "invention/fr": {
+    "source": "finetuned",
+    "finetuned_solution": "06",
+    "cor_lbl": 0.1998440823104416
+  },
+  "invention/it": {
+    "source": "finetuned",
+    "finetuned_solution": "05",
+    "cor_lbl": 0.24374117349639302
+  },
+  "invention/zh": {
+    "source": "finetuned",
+    "finetuned_solution": "05",
+    "cor_lbl": 0.2742616371753538
+  },
+  "mischaracterization/en": {
+    "source": "finetuned",
+    "finetuned_solution": "04",
+    "cor_lbl": 0.1490324695752756
+  },
+  "mischaracterization/fr": {
+    "source": "finetuned",
+    "finetuned_solution": "06",
+    "cor_lbl": 0.14114516645912667
+  },
+  "mischaracterization/it": {
+    "source": "finetuned",
+    "finetuned_solution": "04",
+    "cor_lbl": 0.17306688890260896
+  },
+  "mischaracterization/zh": {
+    "source": "uncertainty",
+    "start_threshold": 0.9,
+    "continue_threshold": 0.6000000000000001,
+    "min_span_tokens": 1,
+    "cor_lbl": 0.13305019443687005,
+    "signal": "lookback",
+    "n_val_records": 466
+  },
+  "OCR/en": {
+    "source": "finetuned",
+    "finetuned_solution": "02",
+    "cor_lbl": 0.4255919422586827
+  },
+  "OCR/fr": {
+    "source": "finetuned",
+    "finetuned_solution": "02",
+    "cor_lbl": 0.35505411635096895
+  },
+  "OCR/it": {
+    "source": "finetuned",
+    "finetuned_solution": "05",
+    "cor_lbl": 0.3446288840421946
+  },
+  "OCR/zh": {
+    "source": "uncertainty",
+    "start_threshold": 0.995,
+    "continue_threshold": 0.995,
+    "min_span_tokens": 2,
+    "cor_lbl": 0.35951761200964644,
+    "signal": "lookback",
+    "n_val_records": 47
+  },
+  "miscounting/en": {
+    "source": "finetuned",
+    "finetuned_solution": "05",
+    "cor_lbl": 0.42276467455097594
+  },
+  "miscounting/fr": {
+    "source": "finetuned",
+    "finetuned_solution": "02",
+    "cor_lbl": 0.4956763423050322
+  },
+  "miscounting/it": {
+    "source": "finetuned",
+    "finetuned_solution": "05",
+    "cor_lbl": 0.41746884869302514
+  },
+  "miscounting/zh": {
+    "source": "finetuned",
+    "finetuned_solution": "05",
+    "cor_lbl": 0.40235516873648336
+  },
+  "other/en": {
+    "source": "finetuned",
+    "finetuned_solution": "06",
+    "cor_lbl": 0.20560035610560148
+  },
+  "other/fr": {
+    "source": "finetuned",
+    "finetuned_solution": "06",
+    "cor_lbl": 0.05896042531190849
+  },
+  "other/it": {
+    "source": "finetuned",
+    "finetuned_solution": "06",
+    "cor_lbl": 0.135794834567086
+  },
+  "other/zh": {
+    "source": "finetuned",
+    "finetuned_solution": "04",
+    "cor_lbl": 0.0869552435303953
+  }
+}

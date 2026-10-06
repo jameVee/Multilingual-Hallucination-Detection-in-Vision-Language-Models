@@ -1,0 +1,637 @@
+{
+  "invention/en": {
+    "n_train_positive": 30668,
+    "n_train_negative": 3000,
+    "n_val_positive": 8141,
+    "n_val_negative": 3000,
+    "fallback_train_multilingual": false,
+    "fallback_val_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.547657146951644,
+        "auc_std": 0.005780259551410124
+      },
+      "lookback": {
+        "auc_mean": 0.6666346067231709,
+        "auc_std": 0.005829371302373524
+      },
+      "hidden_-1": {
+        "auc_mean": 0.6488146009908693,
+        "auc_std": 0.005237780789118666
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.6667752118904311,
+      "auc_std": 0.005354487277634968,
+      "signals_used": [
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "invention/fr": {
+    "n_train_positive": 43777,
+    "n_train_negative": 3000,
+    "n_val_positive": 12109,
+    "n_val_negative": 3000,
+    "fallback_train_multilingual": false,
+    "fallback_val_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.5583505794588047,
+        "auc_std": 0.005393926923081948
+      },
+      "lookback": {
+        "auc_mean": 0.6898769235004267,
+        "auc_std": 0.005307747164998056
+      },
+      "hidden_-1": {
+        "auc_mean": 0.6636985575467282,
+        "auc_std": 0.005006223924126191
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.6839672557601784,
+      "auc_std": 0.005152396166267376,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "invention/it": {
+    "n_train_positive": 20215,
+    "n_train_negative": 3000,
+    "n_val_positive": 5435,
+    "n_val_negative": 3000,
+    "fallback_train_multilingual": false,
+    "fallback_val_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.4837559030972095,
+        "auc_std": 0.006231758795274259
+      },
+      "lookback": {
+        "auc_mean": 0.6589359705611775,
+        "auc_std": 0.006122357488901074
+      },
+      "hidden_-1": {
+        "auc_mean": 0.6810068383931309,
+        "auc_std": 0.005359711096988625
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.6341988040478381,
+      "auc_std": 0.005648250041245397,
+      "signals_used": [
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "invention/zh": {
+    "n_train_positive": 16443,
+    "n_train_negative": 3000,
+    "n_val_positive": 4261,
+    "n_val_negative": 3000,
+    "fallback_train_multilingual": false,
+    "fallback_val_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.5350216694046781,
+        "auc_std": 0.006343358570680376
+      },
+      "lookback": {
+        "auc_mean": 0.6782744660877729,
+        "auc_std": 0.0066513818336701586
+      },
+      "hidden_-1": {
+        "auc_mean": 0.7000517875303136,
+        "auc_std": 0.005961080026950415
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.6929181334584995,
+      "auc_std": 0.0060716477529927995,
+      "signals_used": [
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "mischaracterization/en": {
+    "n_train_positive": 15302,
+    "n_train_negative": 3000,
+    "n_val_positive": 3201,
+    "n_val_negative": 3000,
+    "fallback_train_multilingual": false,
+    "fallback_val_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.5075128605644069,
+        "auc_std": 0.007208296958171936
+      },
+      "lookback": {
+        "auc_mean": 0.6442473185462876,
+        "auc_std": 0.0066938500588659385
+      },
+      "hidden_-1": {
+        "auc_mean": 0.6559637613245861,
+        "auc_std": 0.006826591411580608
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.6667182651254817,
+      "auc_std": 0.006653060894071219,
+      "signals_used": [
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "mischaracterization/fr": {
+    "n_train_positive": 11221,
+    "n_train_negative": 3000,
+    "n_val_positive": 2736,
+    "n_val_negative": 3000,
+    "fallback_train_multilingual": false,
+    "fallback_val_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.5856751340155946,
+        "auc_std": 0.008168364813936967
+      },
+      "lookback": {
+        "auc_mean": 0.7057506700779727,
+        "auc_std": 0.006526692049222906
+      },
+      "hidden_-1": {
+        "auc_mean": 0.7280104166666665,
+        "auc_std": 0.006568627511939137
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.7419814814814815,
+      "auc_std": 0.006395938122493334,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "mischaracterization/it": {
+    "n_train_positive": 9376,
+    "n_train_negative": 3000,
+    "n_val_positive": 2341,
+    "n_val_negative": 3000,
+    "fallback_train_multilingual": false,
+    "fallback_val_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.5946331339883241,
+        "auc_std": 0.007322143469099787
+      },
+      "lookback": {
+        "auc_mean": 0.6801796240922683,
+        "auc_std": 0.00753237357989968
+      },
+      "hidden_-1": {
+        "auc_mean": 0.703021073615264,
+        "auc_std": 0.0065825718807413875
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.7036925103232239,
+      "auc_std": 0.0069755831479004675,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "mischaracterization/zh": {
+    "n_train_positive": 9011,
+    "n_train_negative": 3000,
+    "n_val_positive": 2124,
+    "n_val_negative": 3000,
+    "fallback_train_multilingual": false,
+    "fallback_val_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.5700116133082235,
+        "auc_std": 0.008514563789453809
+      },
+      "lookback": {
+        "auc_mean": 0.674661644695543,
+        "auc_std": 0.0072188159294032305
+      },
+      "hidden_-1": {
+        "auc_mean": 0.6742128060263654,
+        "auc_std": 0.007675899043991524
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.682478892027621,
+      "auc_std": 0.00769146158208608,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "OCR/en": {
+    "n_train_positive": 1064,
+    "n_train_negative": 3000,
+    "n_val_positive": 1289,
+    "n_val_negative": 3000,
+    "fallback_train_multilingual": false,
+    "fallback_val_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.7250389190587019,
+        "auc_std": 0.008650406256948929
+      },
+      "lookback": {
+        "auc_mean": 0.5065641324023791,
+        "auc_std": 0.010765312528420423
+      },
+      "hidden_-1": {
+        "auc_mean": 0.6803564778898371,
+        "auc_std": 0.009196077267979488
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.632169381949832,
+      "auc_std": 0.009825731712780117,
+      "signals_used": [
+        "entropy_nll",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "OCR/fr": {
+    "n_train_positive": 528,
+    "n_train_negative": 3000,
+    "n_val_positive": 174,
+    "n_val_negative": 3000,
+    "fallback_train_multilingual": false,
+    "fallback_val_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.6925718390804598,
+        "auc_std": 0.026200602751992503
+      },
+      "lookback": {
+        "auc_mean": 0.9789674329501916,
+        "auc_std": 0.004001217148477999
+      },
+      "hidden_-1": {
+        "auc_mean": 0.976354406130268,
+        "auc_std": 0.004876576526391382
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.9816685823754789,
+      "auc_std": 0.005262983329034326,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "OCR/it": {
+    "n_train_positive": 577,
+    "n_train_negative": 3000,
+    "n_val_positive": 153,
+    "n_val_negative": 3000,
+    "fallback_train_multilingual": false,
+    "fallback_val_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.6791873638344228,
+        "auc_std": 0.02258748912807805
+      },
+      "lookback": {
+        "auc_mean": 0.9789488017429193,
+        "auc_std": 0.003471821514210713
+      },
+      "hidden_-1": {
+        "auc_mean": 0.9765326797385621,
+        "auc_std": 0.0033108258605890296
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.9761437908496732,
+      "auc_std": 0.0037948395756364195,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "OCR/zh": {
+    "n_train_positive": 808,
+    "n_train_negative": 3000,
+    "n_val_positive": 120,
+    "n_val_negative": 3000,
+    "fallback_train_multilingual": false,
+    "fallback_val_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.7160458333333334,
+        "auc_std": 0.026224151244097556
+      },
+      "lookback": {
+        "auc_mean": 0.9334055555555557,
+        "auc_std": 0.0176089053062402
+      },
+      "hidden_-1": {
+        "auc_mean": 0.9435055555555557,
+        "auc_std": 0.015030475882635496
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.926725,
+      "auc_std": 0.019106608264992084,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "miscounting/en": {
+    "n_train_positive": 2615,
+    "n_train_negative": 3000,
+    "n_val_positive": 275,
+    "n_val_negative": 3000,
+    "fallback_train_multilingual": false,
+    "fallback_val_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.5923418181818181,
+        "auc_std": 0.015051964065868109
+      },
+      "lookback": {
+        "auc_mean": 0.9314375757575756,
+        "auc_std": 0.00879798452470959
+      },
+      "hidden_-1": {
+        "auc_mean": 0.9337006060606061,
+        "auc_std": 0.009396884835682762
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.9448472727272726,
+      "auc_std": 0.00783058357218185,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "miscounting/fr": {
+    "n_train_positive": 758,
+    "n_train_negative": 3000,
+    "n_val_positive": 153,
+    "n_val_negative": 3000,
+    "fallback_train_multilingual": false,
+    "fallback_val_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.6422156862745099,
+        "auc_std": 0.024109764686713296
+      },
+      "lookback": {
+        "auc_mean": 0.9590762527233115,
+        "auc_std": 0.010114275283893392
+      },
+      "hidden_-1": {
+        "auc_mean": 0.9588867102396514,
+        "auc_std": 0.009643396399029624
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.9704945533769063,
+      "auc_std": 0.006575458008427845,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "miscounting/it": {
+    "n_train_positive": 2600,
+    "n_train_negative": 3000,
+    "n_val_positive": 764,
+    "n_val_negative": 3000,
+    "fallback_train_multilingual": false,
+    "fallback_val_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.8307975567190227,
+        "auc_std": 0.009213538365651993
+      },
+      "lookback": {
+        "auc_mean": 0.9254029232111692,
+        "auc_std": 0.004815916451255657
+      },
+      "hidden_-1": {
+        "auc_mean": 0.9388462041884817,
+        "auc_std": 0.003918631903084961
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.96098647469459,
+      "auc_std": 0.0033810755773213417,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "miscounting/zh": {
+    "n_train_positive": 2480,
+    "n_train_negative": 3000,
+    "n_val_positive": 227,
+    "n_val_negative": 3000,
+    "fallback_train_multilingual": false,
+    "fallback_val_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.6846240822320118,
+        "auc_std": 0.017994933956013637
+      },
+      "lookback": {
+        "auc_mean": 0.9728663729809105,
+        "auc_std": 0.004972329348547324
+      },
+      "hidden_-1": {
+        "auc_mean": 0.9681505139500733,
+        "auc_std": 0.006376432695139693
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.973118208516887,
+      "auc_std": 0.004909953193537706,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "other/en": {
+    "n_train_positive": 10239,
+    "n_train_negative": 3000,
+    "n_val_positive": 1306,
+    "n_val_negative": 3000,
+    "fallback_train_multilingual": false,
+    "fallback_val_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.756580270546197,
+        "auc_std": 0.009120596803271375
+      },
+      "lookback": {
+        "auc_mean": 0.845712225625319,
+        "auc_std": 0.006897433452060098
+      },
+      "hidden_-1": {
+        "auc_mean": 0.8132676110260336,
+        "auc_std": 0.007801042100925319
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.8254975752935171,
+      "auc_std": 0.007324299523113084,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "other/fr": {
+    "n_train_positive": 5049,
+    "n_train_negative": 3000,
+    "n_val_positive": 1708,
+    "n_val_negative": 3000,
+    "fallback_train_multilingual": false,
+    "fallback_val_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.74337900078064,
+        "auc_std": 0.007716033721551303
+      },
+      "lookback": {
+        "auc_mean": 0.711158762685402,
+        "auc_std": 0.007530458010249102
+      },
+      "hidden_-1": {
+        "auc_mean": 0.674331674473068,
+        "auc_std": 0.007199580542544181
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.6957788836846214,
+      "auc_std": 0.007373024805230534,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "other/it": {
+    "n_train_positive": 8854,
+    "n_train_negative": 3000,
+    "n_val_positive": 2138,
+    "n_val_negative": 3000,
+    "fallback_train_multilingual": false,
+    "fallback_val_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.6414636732148425,
+        "auc_std": 0.008213543014147586
+      },
+      "lookback": {
+        "auc_mean": 0.8041060960399128,
+        "auc_std": 0.0056470161136876265
+      },
+      "hidden_-1": {
+        "auc_mean": 0.8850710165263487,
+        "auc_std": 0.004418703370025546
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.889617165575304,
+      "auc_std": 0.004283432362002627,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  },
+  "other/zh": {
+    "n_train_positive": 8774,
+    "n_train_negative": 3000,
+    "n_val_positive": 2357,
+    "n_val_negative": 3000,
+    "fallback_train_multilingual": false,
+    "fallback_val_multilingual": false,
+    "signals": {
+      "entropy_nll": {
+        "auc_mean": 0.6827965634280866,
+        "auc_std": 0.007875457758804388
+      },
+      "lookback": {
+        "auc_mean": 0.8661274925753076,
+        "auc_std": 0.00480448988808381
+      },
+      "hidden_-1": {
+        "auc_mean": 0.9009282986847689,
+        "auc_std": 0.004230051182234387
+      }
+    },
+    "ensemble": {
+      "auc_mean": 0.9078756894357233,
+      "auc_std": 0.0040987074854840514,
+      "signals_used": [
+        "entropy_nll",
+        "lookback",
+        "hidden_-1"
+      ]
+    },
+    "status": "ok"
+  }
+}
