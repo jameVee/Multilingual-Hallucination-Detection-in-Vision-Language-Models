@@ -1,0 +1,193 @@
+{
+  "invention/en": {
+    "model_path": "models_clean_and_other_gbm_w2/invention_en.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.7414041682021046,
+    "window": 2,
+    "classifier": "gbm"
+  },
+  "invention/fr": {
+    "model_path": "models_clean_and_other_gbm_w2/invention_fr.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.7639938337875409,
+    "window": 2,
+    "classifier": "gbm"
+  },
+  "invention/it": {
+    "model_path": "models_clean_and_other_gbm_w2/invention_it.joblib",
+    "kind": "single",
+    "signal": "hidden_-1",
+    "auc_mean": 0.740336829193499,
+    "window": 2,
+    "classifier": "gbm"
+  },
+  "invention/zh": {
+    "model_path": "models_clean_and_other_gbm_w2/invention_zh.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.7478454979269342,
+    "window": 2,
+    "classifier": "gbm"
+  },
+  "mischaracterization/en": {
+    "model_path": "models_clean_and_other_gbm_w2/mischaracterization_en.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.6912953243777986,
+    "window": 2,
+    "classifier": "gbm"
+  },
+  "mischaracterization/fr": {
+    "model_path": "models_clean_and_other_gbm_w2/mischaracterization_fr.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.7772775341130603,
+    "window": 2,
+    "classifier": "gbm"
+  },
+  "mischaracterization/it": {
+    "model_path": "models_clean_and_other_gbm_w2/mischaracterization_it.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.7564308699985762,
+    "window": 2,
+    "classifier": "gbm"
+  },
+  "mischaracterization/zh": {
+    "model_path": "models_clean_and_other_gbm_w2/mischaracterization_zh.joblib",
+    "kind": "single",
+    "signal": "hidden_-1",
+    "auc_mean": 0.738655524168236,
+    "window": 2,
+    "classifier": "gbm"
+  },
+  "OCR/en": {
+    "model_path": "models_clean_and_other_gbm_w2/OCR_en.joblib",
+    "kind": "single",
+    "signal": "hidden_-1",
+    "auc_mean": 0.6611629169899147,
+    "window": 2,
+    "classifier": "gbm"
+  },
+  "OCR/fr": {
+    "model_path": "models_clean_and_other_gbm_w2/OCR_fr.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.9878908045977012,
+    "window": 2,
+    "classifier": "gbm"
+  },
+  "OCR/it": {
+    "model_path": "models_clean_and_other_gbm_w2/OCR_it.joblib",
+    "kind": "single",
+    "signal": "hidden_-1",
+    "auc_mean": 0.9849281045751634,
+    "window": 2,
+    "classifier": "gbm"
+  },
+  "OCR/zh": {
+    "model_path": "models_clean_and_other_gbm_w2/OCR_zh.joblib",
+    "kind": "single",
+    "signal": "hidden_-1",
+    "auc_mean": 0.9666083333333333,
+    "window": 2,
+    "classifier": "gbm"
+  },
+  "miscounting/en": {
+    "model_path": "models_clean_and_other_gbm_w2/miscounting_en.joblib",
+    "kind": "single",
+    "signal": "hidden_-1",
+    "auc_mean": 0.9602824242424244,
+    "window": 2,
+    "classifier": "gbm"
+  },
+  "miscounting/fr": {
+    "model_path": "models_clean_and_other_gbm_w2/miscounting_fr.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.9760021786492374,
+    "window": 2,
+    "classifier": "gbm"
+  },
+  "miscounting/it": {
+    "model_path": "models_clean_and_other_gbm_w2/miscounting_it.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.9505575916230368,
+    "window": 2,
+    "classifier": "gbm"
+  },
+  "miscounting/zh": {
+    "model_path": "models_clean_and_other_gbm_w2/miscounting_zh.joblib",
+    "kind": "single",
+    "signal": "lookback",
+    "auc_mean": 0.9846930983847284,
+    "window": 2,
+    "classifier": "gbm"
+  },
+  "other/en": {
+    "model_path": "models_clean_and_other_gbm_w2/other_en.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.8861145992853495,
+    "window": 2,
+    "classifier": "gbm"
+  },
+  "other/fr": {
+    "model_path": "models_clean_and_other_gbm_w2/other_fr.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.8697632708821235,
+    "window": 2,
+    "classifier": "gbm"
+  },
+  "other/it": {
+    "model_path": "models_clean_and_other_gbm_w2/other_it.joblib",
+    "kind": "ensemble",
+    "signal": [
+      "entropy_nll",
+      "lookback",
+      "hidden_-1"
+    ],
+    "auc_mean": 0.9386852198316181,
+    "window": 2,
+    "classifier": "gbm"
+  },
+  "other/zh": {
+    "model_path": "models_clean_and_other_gbm_w2/other_zh.joblib",
+    "kind": "single",
+    "signal": "hidden_-1",
+    "auc_mean": 0.9379137321453825,
+    "window": 2,
+    "classifier": "gbm"
+  }
+}
