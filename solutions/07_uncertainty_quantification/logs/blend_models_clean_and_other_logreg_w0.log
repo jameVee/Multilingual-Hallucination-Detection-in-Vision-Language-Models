@@ -1,0 +1,26 @@
+Loaded 4 shard file(s): 902784 train-split tokens, 217671 val-split tokens, hidden-state layers found: ['hidden_-1']
+
+category               language  alpha  start   cont minsp    blend   uncert  pure_ft  improved
+invention              en          0.9  0.300  0.300     1   0.2018   0.1224   0.2021        no
+invention              fr          0.9  0.300  0.300     1   0.1991   0.1763   0.1998        no
+invention              it          0.7  0.300  0.300     1   0.2545   0.1701   0.2437       YES
+invention              zh          0.9  0.300  0.300     1   0.2733   0.1529   0.2743        no
+mischaracterization    en          0.9  0.300  0.300     1   0.1515   0.1142   0.1490       YES
+mischaracterization    fr          0.6  0.300  0.300     1   0.1440   0.1307   0.1411       YES
+mischaracterization    it          0.8  0.300  0.300     1   0.1775   0.1271   0.1731       YES
+mischaracterization    zh          0.6  0.300  0.300     1   0.1418   0.1320   0.1296       YES
+OCR                    en          0.9  0.300  0.300     1   0.4261   0.3115   0.4256       YES
+OCR                    fr          0.8  0.300  0.300     1   0.3712   0.2914   0.3551       YES
+OCR                    it          0.9  0.300  0.300     1   0.3449   0.3380   0.3446       YES
+OCR                    zh          0.3  0.700  0.500     1   0.3644   0.3349   0.3140       YES
+miscounting            en          0.4  0.700  0.700     1   0.4426   0.2417   0.4228       YES
+miscounting            fr          0.1  0.900  0.900     1   0.5356   0.2419   0.4957       YES
+miscounting            it          0.4  0.700  0.700     1   0.4701   0.1976   0.4175       YES
+miscounting            zh          0.4  0.700  0.700     1   0.4307   0.2817   0.4024       YES
+other                  en          1.0  0.300  0.300     1   0.2056   0.0091   0.2056        no
+other                  fr          0.9  0.300  0.300     1   0.0624   0.0172   0.0590       YES
+other                  it          0.9  0.300  0.300     1   0.1422   0.0587   0.1358       YES
+other                  zh          0.9  0.300  0.300     1   0.0890   0.0094   0.0870       YES
+
+Blending improved 16/20 cells over the pure fine-tuned baseline.
+Saved -> blend_selection_table_models_clean_and_other_logreg_w0.json

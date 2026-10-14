@@ -1,0 +1,362 @@
+{
+  "invention/en": {
+    "finetuned_solution": "06",
+    "alpha": 0.7,
+    "start_threshold": 0.3,
+    "continue_threshold": 0.3,
+    "min_span_tokens": 1,
+    "blend_cor_lbl": 0.2045411975760932,
+    "uncertainty_only": {
+      "cor_lbl": 0.13151769812422595,
+      "start_threshold": 0.7,
+      "continue_threshold": 0.5,
+      "min_span_tokens": 1
+    },
+    "pure_finetuned_cor_lbl": 0.20206397617260596,
+    "improved_over_pure_finetuned": true,
+    "n_records": 3020,
+    "n_configs_evaluated": 569
+  },
+  "invention/fr": {
+    "finetuned_solution": "06",
+    "alpha": 0.3,
+    "start_threshold": 0.5,
+    "continue_threshold": 0.4,
+    "min_span_tokens": 3,
+    "blend_cor_lbl": 0.2248703078876582,
+    "uncertainty_only": {
+      "cor_lbl": 0.2033285219049977,
+      "start_threshold": 0.7,
+      "continue_threshold": 0.5,
+      "min_span_tokens": 2
+    },
+    "pure_finetuned_cor_lbl": 0.1998440823104416,
+    "improved_over_pure_finetuned": true,
+    "n_records": 3020,
+    "n_configs_evaluated": 569
+  },
+  "invention/it": {
+    "finetuned_solution": "05",
+    "alpha": 0.7,
+    "start_threshold": 0.3,
+    "continue_threshold": 0.3,
+    "min_span_tokens": 1,
+    "blend_cor_lbl": 0.2523470287381667,
+    "uncertainty_only": {
+      "cor_lbl": 0.1709228052296719,
+      "start_threshold": 0.8,
+      "continue_threshold": 0.5,
+      "min_span_tokens": 2
+    },
+    "pure_finetuned_cor_lbl": 0.24374117349639302,
+    "improved_over_pure_finetuned": true,
+    "n_records": 3020,
+    "n_configs_evaluated": 569
+  },
+  "invention/zh": {
+    "finetuned_solution": "05",
+    "alpha": 0.8,
+    "start_threshold": 0.3,
+    "continue_threshold": 0.3,
+    "min_span_tokens": 1,
+    "blend_cor_lbl": 0.2740184084328474,
+    "uncertainty_only": {
+      "cor_lbl": 0.18186965814191675,
+      "start_threshold": 0.8,
+      "continue_threshold": 0.7,
+      "min_span_tokens": 3
+    },
+    "pure_finetuned_cor_lbl": 0.2742616371753538,
+    "improved_over_pure_finetuned": false,
+    "n_records": 3020,
+    "n_configs_evaluated": 569
+  },
+  "mischaracterization/en": {
+    "finetuned_solution": "04",
+    "alpha": 0.4,
+    "start_threshold": 0.5,
+    "continue_threshold": 0.4,
+    "min_span_tokens": 3,
+    "blend_cor_lbl": 0.16742116561919795,
+    "uncertainty_only": {
+      "cor_lbl": 0.1540693713110442,
+      "start_threshold": 0.7,
+      "continue_threshold": 0.6,
+      "min_span_tokens": 3
+    },
+    "pure_finetuned_cor_lbl": 0.1490324695752756,
+    "improved_over_pure_finetuned": true,
+    "n_records": 3020,
+    "n_configs_evaluated": 569
+  },
+  "mischaracterization/fr": {
+    "finetuned_solution": "06",
+    "alpha": 0.4,
+    "start_threshold": 0.5,
+    "continue_threshold": 0.4,
+    "min_span_tokens": 2,
+    "blend_cor_lbl": 0.1622704531856103,
+    "uncertainty_only": {
+      "cor_lbl": 0.1548191225096383,
+      "start_threshold": 0.9,
+      "continue_threshold": 0.6,
+      "min_span_tokens": 1
+    },
+    "pure_finetuned_cor_lbl": 0.14114516645912667,
+    "improved_over_pure_finetuned": true,
+    "n_records": 3020,
+    "n_configs_evaluated": 569
+  },
+  "mischaracterization/it": {
+    "finetuned_solution": "04",
+    "alpha": 0.4,
+    "start_threshold": 0.5,
+    "continue_threshold": 0.4,
+    "min_span_tokens": 1,
+    "blend_cor_lbl": 0.19137472266303532,
+    "uncertainty_only": {
+      "cor_lbl": 0.1790608084833225,
+      "start_threshold": 0.8,
+      "continue_threshold": 0.6,
+      "min_span_tokens": 1
+    },
+    "pure_finetuned_cor_lbl": 0.17306688890260896,
+    "improved_over_pure_finetuned": true,
+    "n_records": 3020,
+    "n_configs_evaluated": 569
+  },
+  "mischaracterization/zh": {
+    "finetuned_solution": "04",
+    "alpha": 0.4,
+    "start_threshold": 0.5,
+    "continue_threshold": 0.4,
+    "min_span_tokens": 2,
+    "blend_cor_lbl": 0.18574486873448842,
+    "uncertainty_only": {
+      "cor_lbl": 0.16506380385903405,
+      "start_threshold": 0.7,
+      "continue_threshold": 0.6,
+      "min_span_tokens": 2
+    },
+    "pure_finetuned_cor_lbl": 0.12955844163408786,
+    "improved_over_pure_finetuned": true,
+    "n_records": 3020,
+    "n_configs_evaluated": 569
+  },
+  "OCR/en": {
+    "finetuned_solution": "02",
+    "alpha": 0.9,
+    "start_threshold": 0.3,
+    "continue_threshold": 0.3,
+    "min_span_tokens": 1,
+    "blend_cor_lbl": 0.4260579928312984,
+    "uncertainty_only": {
+      "cor_lbl": 0.3416038172543788,
+      "start_threshold": 0.999,
+      "continue_threshold": 0.999,
+      "min_span_tokens": 2
+    },
+    "pure_finetuned_cor_lbl": 0.4255919422586827,
+    "improved_over_pure_finetuned": true,
+    "n_records": 3020,
+    "n_configs_evaluated": 464
+  },
+  "OCR/fr": {
+    "finetuned_solution": "02",
+    "alpha": 0.7,
+    "start_threshold": 0.5,
+    "continue_threshold": 0.3,
+    "min_span_tokens": 2,
+    "blend_cor_lbl": 0.36628983105130886,
+    "uncertainty_only": {
+      "cor_lbl": 0.273789927516327,
+      "start_threshold": 0.995,
+      "continue_threshold": 0.695,
+      "min_span_tokens": 3
+    },
+    "pure_finetuned_cor_lbl": 0.35505411635096895,
+    "improved_over_pure_finetuned": true,
+    "n_records": 3020,
+    "n_configs_evaluated": 569
+  },
+  "OCR/it": {
+    "finetuned_solution": "05",
+    "alpha": 0.5,
+    "start_threshold": 0.5,
+    "continue_threshold": 0.4,
+    "min_span_tokens": 2,
+    "blend_cor_lbl": 0.3453742948288134,
+    "uncertainty_only": {
+      "cor_lbl": 0.3136892005419127,
+      "start_threshold": 0.999,
+      "continue_threshold": 0.799,
+      "min_span_tokens": 2
+    },
+    "pure_finetuned_cor_lbl": 0.3446288840421946,
+    "improved_over_pure_finetuned": true,
+    "n_records": 3020,
+    "n_configs_evaluated": 464
+  },
+  "OCR/zh": {
+    "finetuned_solution": "02",
+    "alpha": 0.0,
+    "start_threshold": 0.995,
+    "continue_threshold": 0.895,
+    "min_span_tokens": 2,
+    "blend_cor_lbl": 0.33472869326395804,
+    "uncertainty_only": {
+      "cor_lbl": 0.33472869326395804,
+      "start_threshold": 0.995,
+      "continue_threshold": 0.895,
+      "min_span_tokens": 2
+    },
+    "pure_finetuned_cor_lbl": 0.3140280355054464,
+    "improved_over_pure_finetuned": true,
+    "n_records": 3020,
+    "n_configs_evaluated": 569
+  },
+  "miscounting/en": {
+    "finetuned_solution": "05",
+    "alpha": 0.1,
+    "start_threshold": 0.9,
+    "continue_threshold": 0.9,
+    "min_span_tokens": 1,
+    "blend_cor_lbl": 0.4467418209817893,
+    "uncertainty_only": {
+      "cor_lbl": 0.3683022518641481,
+      "start_threshold": 0.999,
+      "continue_threshold": 0.999,
+      "min_span_tokens": 1
+    },
+    "pure_finetuned_cor_lbl": 0.42276467455097594,
+    "improved_over_pure_finetuned": true,
+    "n_records": 3020,
+    "n_configs_evaluated": 569
+  },
+  "miscounting/fr": {
+    "finetuned_solution": "02",
+    "alpha": 0.3,
+    "start_threshold": 0.7,
+    "continue_threshold": 0.7,
+    "min_span_tokens": 1,
+    "blend_cor_lbl": 0.5216923859702398,
+    "uncertainty_only": {
+      "cor_lbl": 0.39076905054559286,
+      "start_threshold": 0.999,
+      "continue_threshold": 0.999,
+      "min_span_tokens": 1
+    },
+    "pure_finetuned_cor_lbl": 0.4956763423050322,
+    "improved_over_pure_finetuned": true,
+    "n_records": 3020,
+    "n_configs_evaluated": 569
+  },
+  "miscounting/it": {
+    "finetuned_solution": "05",
+    "alpha": 0.4,
+    "start_threshold": 0.7,
+    "continue_threshold": 0.7,
+    "min_span_tokens": 1,
+    "blend_cor_lbl": 0.50396095118211,
+    "uncertainty_only": {
+      "cor_lbl": 0.3554471457464453,
+      "start_threshold": 0.999,
+      "continue_threshold": 0.999,
+      "min_span_tokens": 1
+    },
+    "pure_finetuned_cor_lbl": 0.41746884869302514,
+    "improved_over_pure_finetuned": true,
+    "n_records": 3020,
+    "n_configs_evaluated": 569
+  },
+  "miscounting/zh": {
+    "finetuned_solution": "05",
+    "alpha": 0.1,
+    "start_threshold": 0.9,
+    "continue_threshold": 0.9,
+    "min_span_tokens": 1,
+    "blend_cor_lbl": 0.4547494979947369,
+    "uncertainty_only": {
+      "cor_lbl": 0.36935664415954933,
+      "start_threshold": 0.999,
+      "continue_threshold": 0.999,
+      "min_span_tokens": 1
+    },
+    "pure_finetuned_cor_lbl": 0.40235516873648336,
+    "improved_over_pure_finetuned": true,
+    "n_records": 3020,
+    "n_configs_evaluated": 569
+  },
+  "other/en": {
+    "finetuned_solution": "06",
+    "alpha": 0.9,
+    "start_threshold": 0.3,
+    "continue_threshold": 0.3,
+    "min_span_tokens": 1,
+    "blend_cor_lbl": 0.20827049266664519,
+    "uncertainty_only": {
+      "cor_lbl": 0.13119340015074532,
+      "start_threshold": 0.98,
+      "continue_threshold": 0.98,
+      "min_span_tokens": 3
+    },
+    "pure_finetuned_cor_lbl": 0.20560035610560148,
+    "improved_over_pure_finetuned": true,
+    "n_records": 3020,
+    "n_configs_evaluated": 464
+  },
+  "other/fr": {
+    "finetuned_solution": "06",
+    "alpha": 0.9,
+    "start_threshold": 0.3,
+    "continue_threshold": 0.3,
+    "min_span_tokens": 1,
+    "blend_cor_lbl": 0.06223957731397408,
+    "uncertainty_only": {
+      "cor_lbl": 0.04680371443593401,
+      "start_threshold": 0.95,
+      "continue_threshold": 0.65,
+      "min_span_tokens": 3
+    },
+    "pure_finetuned_cor_lbl": 0.05896042531190849,
+    "improved_over_pure_finetuned": true,
+    "n_records": 3020,
+    "n_configs_evaluated": 464
+  },
+  "other/it": {
+    "finetuned_solution": "06",
+    "alpha": 0.9,
+    "start_threshold": 0.3,
+    "continue_threshold": 0.3,
+    "min_span_tokens": 1,
+    "blend_cor_lbl": 0.1456211932900733,
+    "uncertainty_only": {
+      "cor_lbl": 0.08344845997587026,
+      "start_threshold": 0.7,
+      "continue_threshold": 0.5,
+      "min_span_tokens": 3
+    },
+    "pure_finetuned_cor_lbl": 0.135794834567086,
+    "improved_over_pure_finetuned": true,
+    "n_records": 3020,
+    "n_configs_evaluated": 569
+  },
+  "other/zh": {
+    "finetuned_solution": "04",
+    "alpha": 0.8,
+    "start_threshold": 0.3,
+    "continue_threshold": 0.3,
+    "min_span_tokens": 1,
+    "blend_cor_lbl": 0.09417668706454263,
+    "uncertainty_only": {
+      "cor_lbl": 0.045610975406496904,
+      "start_threshold": 0.95,
+      "continue_threshold": 0.85,
+      "min_span_tokens": 2
+    },
+    "pure_finetuned_cor_lbl": 0.0869552435303953,
+    "improved_over_pure_finetuned": true,
+    "n_records": 3020,
+    "n_configs_evaluated": 569
+  }
+}
