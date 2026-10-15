@@ -1,0 +1,163 @@
+{
+  "n": 3020,
+  "overall": {
+    "iou": 0.45287368493185765,
+    "cor": 0.4876224102187578,
+    "cor_lbl": 0.42572250353450525
+  },
+  "per_language": {
+    "en": {
+      "iou": 0.3957247327085102,
+      "cor": 0.44085394053002813,
+      "cor_lbl": 0.3838116020239995,
+      "n": 729
+    },
+    "fr": {
+      "iou": 0.4373173959540881,
+      "cor": 0.4631744525366989,
+      "cor_lbl": 0.3944713847428099,
+      "n": 754
+    },
+    "it": {
+      "iou": 0.45079036978856535,
+      "cor": 0.48895523552926456,
+      "cor_lbl": 0.41968437395805025,
+      "n": 757
+    },
+    "zh": {
+      "iou": 0.5233456049620253,
+      "cor": 0.5536724432127353,
+      "cor_lbl": 0.5009625738671633,
+      "n": 780
+    }
+  },
+  "per_label": {
+    "invention": {
+      "iou": 0.20234149195651915,
+      "cor": 0.22599221264521524,
+      "n_records_with_label": 1362
+    },
+    "mischaracterization": {
+      "iou": 0.11659118866024169,
+      "cor": 0.14891306846989752,
+      "n_records_with_label": 1530
+    },
+    "OCR": {
+      "iou": 0.3350908683694007,
+      "cor": 0.3668386276402945,
+      "n_records_with_label": 194
+    },
+    "miscounting": {
+      "iou": 0.3761987704088041,
+      "cor": 0.4309286776672815,
+      "n_records_with_label": 423
+    },
+    "other": {
+      "iou": 0.11689651611936637,
+      "cor": 0.12125667157507189,
+      "n_records_with_label": 368
+    }
+  },
+  "per_label_language": {
+    "invention/en": {
+      "iou": 0.16633595233039847,
+      "cor": 0.20206397617260596,
+      "n_records_with_label": 357
+    },
+    "invention/fr": {
+      "iou": 0.1862244481454107,
+      "cor": 0.1998440823104416,
+      "n_records_with_label": 396
+    },
+    "invention/it": {
+      "iou": 0.22135904955421323,
+      "cor": 0.24374117349639302,
+      "n_records_with_label": 344
+    },
+    "invention/zh": {
+      "iou": 0.2502444624550748,
+      "cor": 0.2742616371753538,
+      "n_records_with_label": 265
+    },
+    "mischaracterization/en": {
+      "iou": 0.11343321856249798,
+      "cor": 0.1490324695752756,
+      "n_records_with_label": 429
+    },
+    "mischaracterization/fr": {
+      "iou": 0.11225972077533157,
+      "cor": 0.14114516645912667,
+      "n_records_with_label": 374
+    },
+    "mischaracterization/it": {
+      "iou": 0.1367329546341365,
+      "cor": 0.17306688890260896,
+      "n_records_with_label": 389
+    },
+    "mischaracterization/zh": {
+      "iou": 0.10221128095918652,
+      "cor": 0.12955844163408786,
+      "n_records_with_label": 338
+    },
+    "OCR/en": {
+      "iou": 0.3919264003092276,
+      "cor": 0.4255919422586827,
+      "n_records_with_label": 60
+    },
+    "OCR/fr": {
+      "iou": 0.317695010339424,
+      "cor": 0.35505411635096895,
+      "n_records_with_label": 53
+    },
+    "OCR/it": {
+      "iou": 0.3141133557800225,
+      "cor": 0.3446288840421946,
+      "n_records_with_label": 45
+    },
+    "OCR/zh": {
+      "iou": 0.29219744130610004,
+      "cor": 0.3140280355054464,
+      "n_records_with_label": 36
+    },
+    "miscounting/en": {
+      "iou": 0.35637973225875835,
+      "cor": 0.42276467455097594,
+      "n_records_with_label": 117
+    },
+    "miscounting/fr": {
+      "iou": 0.46345484848894913,
+      "cor": 0.4956763423050322,
+      "n_records_with_label": 90
+    },
+    "miscounting/it": {
+      "iou": 0.36080609446806117,
+      "cor": 0.41746884869302514,
+      "n_records_with_label": 86
+    },
+    "miscounting/zh": {
+      "iou": 0.34381069784915935,
+      "cor": 0.40235516873648336,
+      "n_records_with_label": 130
+    },
+    "other/en": {
+      "iou": 0.19250394880588786,
+      "cor": 0.20560035610560148,
+      "n_records_with_label": 78
+    },
+    "other/fr": {
+      "iou": 0.05641706964323581,
+      "cor": 0.05896042531190849,
+      "n_records_with_label": 96
+    },
+    "other/it": {
+      "iou": 0.1312316715542522,
+      "cor": 0.135794834567086,
+      "n_records_with_label": 124
+    },
+    "other/zh": {
+      "iou": 0.09019777095128081,
+      "cor": 0.0869552435303953,
+      "n_records_with_label": 70
+    }
+  }
+}
