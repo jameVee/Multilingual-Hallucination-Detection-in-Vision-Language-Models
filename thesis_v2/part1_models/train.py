@@ -118,10 +118,18 @@ def main():
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
     for _ in range(gstep0):
         scheduler.step()
+    opt_path = out / "optimizer.pt"
+    if args.resume and gstep0 and opt_path.exists():
+        # AdamW moments too, so a resumed run continues like an uninterrupted one
+        optimizer.load_state_dict(torch.load(opt_path, map_location=device))
+        print(f"--resume: optimizer state restored from {opt_path.name}")
+    elif args.resume and gstep0:
+        print("--resume: WARNING no optimizer.pt (older checkpoint) -- AdamW moments restart from zero")
 
     def save(cum, complete=False):
         model.save_pretrained(out)
         processor.save_pretrained(out)
+        torch.save(optimizer.state_dict(), opt_path)
         (out / "train_config.json").write_text(json.dumps(
             vars(args) | {"backbone_model_id": bb.model_id, "provenance": provenance}, indent=2))
         state_path.write_text(json.dumps({"examples_done": cum, "global_step": gstep, "complete": complete}))
