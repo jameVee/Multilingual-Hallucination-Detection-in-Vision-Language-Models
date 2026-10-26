@@ -24,8 +24,12 @@ mkdir -p "$LOGS"
 QLOG="$LOGS/queue.log"
 log() { echo "[$(date '+%F %T')] $*" | tee -a "$QLOG"; }
 
-while pgrep -f "thesis_v2.part1_models.(train|predict)" > /dev/null; do
-  log "waiting: another Part 1 job is running ($(pgrep -fa 'thesis_v2.part1_models.(train|predict)' | head -1 | cut -c1-120))"
+# anchored on the python process itself: the tmux server's command line also contains
+# "python -m thesis_v2..." for as long as any session lives, so an unanchored match
+# would wait forever
+JOB_RE='^(\S*/)?python[0-9.]* -m thesis_v2\.part1_models\.(train|predict)'
+while pgrep -f "$JOB_RE" > /dev/null; do
+  log "waiting: another Part 1 job is running ($(pgrep -fa "$JOB_RE" | head -1 | cut -c1-120))"
   sleep 300
 done
 
