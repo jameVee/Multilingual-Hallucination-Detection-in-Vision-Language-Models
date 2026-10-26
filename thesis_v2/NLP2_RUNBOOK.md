@@ -1,6 +1,9 @@
 # nlp2 runbook (thesis_v2)
 
-Code reaches nlp2 through git. Push from the laptop, then `git pull` on nlp2. Run every
+Code reaches nlp2 through git. Push from the laptop, then on nlp2 run
+`git fetch deploy && git merge --ff-only deploy/thesis-v2`. The `deploy` remote uses a
+read-only deploy key (`~/.ssh/github_shroom_deploy`, SSH alias `github-shroom`), so
+fetching needs no GitHub login. `origin` (HTTPS) is unchanged. Run every
 job in `tmux` with a log file. Check `nvidia-smi` before each launch, and run at most
 **2 heavy GPU jobs at once** (nlp2 has crashed under more). All outputs go under
 `thesis_v2/runs/`, which is gitignored. Copy back only prediction files and score JSONs.
