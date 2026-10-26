@@ -15,6 +15,11 @@ Usage:
 """
 from __future__ import annotations
 
+import os
+
+# must be set before torch initializes CUDA: reduces fragmentation OOMs on the 24 GB cards
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+
 import argparse
 import json
 import random
@@ -77,17 +82,28 @@ def main():
         model, n_lora = vr.apply_lora(model, bb)
         opt = torch.optim.AdamW([q for q in model.parameters() if q.requires_grad], lr=2e-4)
         model.train()
-        t0, n = time.time(), 0
+        t0, n, grad = time.time(), 0, None
         for i, b in enumerate(batches):
             if b["input_ids"].shape[1] > MAX_SEQ:
                 continue
             b = {k: (v.to(device) if hasattr(v, "to") else v) for k, v in b.items()}
             (model(**b).loss / 8).backward()
             n += 1
+            if n == 1:
+                # LoRA must actually receive gradients (gradient checkpointing can silently
+                # cut them: "None of the inputs have requires_grad=True")
+                lora = [(nm, q) for nm, q in model.named_parameters() if "lora_" in nm and q.requires_grad]
+                nonzero = sum(1 for _, q in lora if q.grad is not None and q.grad.abs().sum() > 0)
+                lora_b = [q for nm, q in lora if "lora_B" in nm]
+                grad = {"lora_params": len(lora), "with_nonzero_grad": nonzero,
+                        # lora_B starts at 0, so only lora_B gets a gradient on step 1
+                        "lora_B_with_grad": sum(1 for q in lora_b if q.grad is not None and q.grad.abs().sum() > 0),
+                        "lora_B_total": len(lora_b)}
             if n % 8 == 0:
                 opt.step(); opt.zero_grad()
+        grad_ok = grad is not None and grad["lora_B_with_grad"] >= 0.95 * grad["lora_B_total"]
         res["checks"]["training"] = {
-            "pass": True, "lora_modules": n_lora, "examples": n,
+            "pass": grad_ok, "gradients": grad, "lora_modules": n_lora, "examples": n,
             "sec_per_example": round((time.time() - t0) / max(1, n), 2),
             "peak_gpu_mem_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2) if device != "cpu" else None,
         }

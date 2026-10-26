@@ -51,7 +51,9 @@ BACKBONES = {
     ),
     "pixtral12b": Backbone(
         name="pixtral12b", model_id="mistral-community/pixtral-12b", family="Mistral",
-        processor_kwargs={"size": {"longest_edge": 768}},   # caps patch count
+        # 512 px / 16 px patches = at most 32x32 = 1024 visual tokens, the same budget as
+        # Qwen's max_pixels (1024 * 28^2). 768 ran out of memory on nlp2's 24 GB cards.
+        processor_kwargs={"size": {"longest_edge": 512}},
         nested_images=True,
     ),
     # Backups if a primary fails the feasibility gate.

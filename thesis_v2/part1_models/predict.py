@@ -15,6 +15,11 @@ Usage:
 """
 from __future__ import annotations
 
+import os
+
+# must be set before torch initializes CUDA: reduces fragmentation OOMs on the 24 GB cards
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+
 import argparse
 import json
 from pathlib import Path
