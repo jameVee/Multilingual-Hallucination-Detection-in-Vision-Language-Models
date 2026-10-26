@@ -39,10 +39,16 @@ def load_processor(bb: Backbone, source=None):
     from transformers import AutoProcessor
     source = source or bb.model_id
     try:
-        return AutoProcessor.from_pretrained(source, trust_remote_code=bb.trust_remote_code, **bb.processor_kwargs)
+        processor = AutoProcessor.from_pretrained(source, trust_remote_code=bb.trust_remote_code, **bb.processor_kwargs)
     except TypeError as exc:
         # Surface it: silently dropping a resolution cap could blow up sequence length.
         raise RuntimeError(f"{bb.name}: processor rejected kwargs {bb.processor_kwargs}: {exc}") from exc
+    tok = getattr(processor, "tokenizer", processor)
+    if tok.pad_token is None:
+        # e.g. Pixtral: no pad token, so padding=True raises. Batches are size 1, so the
+        # choice never changes a training example; prefer the vocabulary's own <pad>.
+        tok.pad_token = "<pad>" if "<pad>" in tok.get_vocab() else tok.eos_token
+    return processor
 
 
 def load_model(bb: Backbone, device, load_in_4bit=True):
