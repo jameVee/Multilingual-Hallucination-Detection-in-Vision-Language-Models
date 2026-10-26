@@ -1,16 +1,17 @@
-"""Reuse solution 02 as the Part 1 Qwen3-VL-8B seed-42 run (no retraining).
+"""Import solution 02 as the old-pipeline reference for Qwen3-VL-8B seed 42.
 
 Solution 02 used the same recipe as Part 1 (Qwen3-VL-8B-Instruct, 4-bit QLoRA, r16/a16,
 lr 2e-4, 2 epochs, grad_accum 8, min/max pixels 256*28^2 / 1024*28^2, seed 42) -- this
 script checks that from its train_config.json, then copies into
-runs/part1/qwen3vl8b_seed42/ (the path every later step expects):
+runs/part1/qwen3vl8b_sol02_seed42/ (kept apart from the new-pipeline run, which uses
+runs/part1/qwen3vl8b_seed42/):
   adapter + processor files, val_predictions.jsonl, test_predictions.jsonl (the four
   per-language test files merged), and provenance.json (source + sha1 of every file).
 Then scores val_select / val_confirm with the official-metric evaluator.
 
-Note: this run came from the old training code (Colab), not part1_models/train.py.
-Seeds 123/2024 and every Part 2 condition are trained with the new code, so the
-"same pipeline" check is: a new-code Qwen seed must land within seed noise of it.
+Pipeline check (pre-registered): the new-code Qwen3-VL-8B seed-42 run must land within
+~0.01 val_select Cor+Lbl of this reference; otherwise the new pipeline differs and is
+investigated before any comparison uses it.
 
 Usage:
     python -m thesis_v2.part1_models.import_solution02
@@ -26,7 +27,7 @@ from thesis_v2.common.paths import OLD_SOLUTIONS, RUNS_DIR
 from solutions.common import data_io
 
 SRC = OLD_SOLUTIONS / "02_vlm_lora_real_data"
-DST = RUNS_DIR / "part1" / "qwen3vl8b_seed42"
+DST = RUNS_DIR / "part1" / "qwen3vl8b_sol02_seed42"
 EXPECTED = {"model_id": "Qwen/Qwen3-VL-8B-Instruct", "epochs": 2, "grad_accum": 8, "lr": 0.0002,
             "lora_r": 16, "lora_alpha": 16, "load_in_4bit": True, "seed": 42,
             "min_pixels": 256 * 28 * 28, "max_pixels": 1024 * 28 * 28}
@@ -65,8 +66,8 @@ def main():
     val = data_io.load_jsonl(DST / "val_predictions.jsonl")
     for split in ("val_select", "val_confirm"):
         res, _ = ev.evaluate(val, split)
-        ev.save_scores("p1_qwen3vl8b_seed42", res)
-        print(ev.format_result("p1_qwen3vl8b_seed42", res))
+        ev.save_scores("ref_sol02_qwen3vl8b_seed42", res)
+        print(ev.format_result("ref_sol02_qwen3vl8b_seed42", res))
     print(f"-> {DST}")
 
 

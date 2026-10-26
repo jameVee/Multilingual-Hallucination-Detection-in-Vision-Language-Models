@@ -26,10 +26,11 @@ Results go to `thesis_v2/results/feasibility/<backbone>.json` (commit these). Us
 
 ## Part 1: model diversity (seed 42; seeds 123/2024 only if the tie rule fires)
 
-Qwen3-VL-8B seed 42 is NOT retrained: solution 02 used the identical recipe and is
-imported by `python -m thesis_v2.part1_models.import_solution02` (laptop) into
-`runs/part1/qwen3vl8b_seed42/` (val_select 0.4214, val_confirm 0.4107). The other
-backbones run the same commands as below with their own `--backbone`:
+Qwen3-VL-8B seed 42 is retrained with the new code (`runs/part1/qwen3vl8b_seed42/`).
+Solution 02 (same recipe, old code) is kept as a reference in
+`runs/part1/qwen3vl8b_sol02_seed42/` (val_select 0.4214, val_confirm 0.4107, imported by
+`import_solution02`). Pipeline check: the new run must land within ~0.01 val_select
+Cor+Lbl of it. Every backbone runs the same commands with its own `--backbone`:
 
 ```bash
 python -m thesis_v2.part1_models.train   --backbone qwen3vl8b --seed 42 --gpu_index 0

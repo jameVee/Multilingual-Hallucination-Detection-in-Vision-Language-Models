@@ -62,6 +62,9 @@ def main():
 
     bb = backbones.get(args.backbone)
     out = Path(args.output_dir) if args.output_dir else RUNS_DIR / "part1" / f"{bb.name}_seed{args.seed}"
+    if not args.resume and (out / "adapter_config.json").exists():
+        raise SystemExit(f"{out} already holds an adapter -- pass --resume to continue it, "
+                         f"or choose another --output_dir (never overwrite a finished run)")
     out.mkdir(parents=True, exist_ok=True)
     torch.manual_seed(args.seed)
     device = vr.resolve_device(args.gpu_index)
