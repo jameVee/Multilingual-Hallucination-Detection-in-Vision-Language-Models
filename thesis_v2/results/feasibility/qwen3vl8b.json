@@ -1,0 +1,34 @@
+{
+  "backbone": "qwen3vl8b",
+  "model_id": "Qwen/Qwen3-VL-8B-Instruct",
+  "checks": {
+    "processor": {
+      "pass": true,
+      "n": 40
+    },
+    "masking": {
+      "pass": true,
+      "ok": 40,
+      "n": 40
+    },
+    "length": {
+      "pass": true,
+      "over_4096": 0,
+      "mean": 1277,
+      "max": 2423
+    },
+    "training": {
+      "pass": true,
+      "lora_modules": 252,
+      "examples": 40,
+      "sec_per_example": 2.49,
+      "peak_gpu_mem_gb": 17.36
+    },
+    "generation": {
+      "pass": true,
+      "json_like": 5,
+      "n": 5
+    }
+  },
+  "passed": true
+}

@@ -1,0 +1,40 @@
+{
+  "backbone": "pixtral12b",
+  "model_id": "mistral-community/pixtral-12b",
+  "checks": {
+    "processor": {
+      "pass": true,
+      "n": 40
+    },
+    "masking": {
+      "pass": true,
+      "ok": 40,
+      "n": 40
+    },
+    "length": {
+      "pass": true,
+      "over_4096": 0,
+      "mean": 1365,
+      "max": 2604
+    },
+    "training": {
+      "pass": true,
+      "gradients": {
+        "lora_params": 560,
+        "with_nonzero_grad": 280,
+        "lora_B_with_grad": 280,
+        "lora_B_total": 280
+      },
+      "lora_modules": 280,
+      "examples": 40,
+      "sec_per_example": 3.04,
+      "peak_gpu_mem_gb": 20.01
+    },
+    "generation": {
+      "pass": true,
+      "json_like": 5,
+      "n": 5
+    }
+  },
+  "passed": true
+}
