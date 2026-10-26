@@ -31,3 +31,6 @@ solutions/07_uncertainty_quantification/models*/*.joblib
 solutions/07_uncertainty_quantification/features*/
 solutions/*/checkpoint*/
 .venv/
+
+# thesis_v2 heavy artifacts (checkpoints, predictions, feature shards, API caches)
+thesis_v2/runs/

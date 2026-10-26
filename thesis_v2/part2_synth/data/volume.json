@@ -1,0 +1,14 @@
+{
+  "OCR/en": 54,
+  "OCR/fr": 40,
+  "OCR/it": 37,
+  "OCR/zh": 32,
+  "miscounting/en": 86,
+  "miscounting/fr": 73,
+  "miscounting/it": 56,
+  "miscounting/zh": 51,
+  "other/en": 64,
+  "other/fr": 54,
+  "other/it": 83,
+  "other/zh": 89
+}
