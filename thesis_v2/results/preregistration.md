@@ -24,3 +24,6 @@ language model, the detector and the probe may make the same errors, so combinin
   candidate); this choice is logged. Both results are reported.
 - Reported either way: the correlation between the detector's and the probe's per-record
   Cor+Lbl on val_select. This is a diagnostic only and selects nothing.
+
+**Outcome (2026-11-01):** Decision 1 chose Qwen3-VL-8B, so R1 applies: 3b runs with the
+Qwen3-VL-8B judge and with a Gemma-3-12B judge in 4-bit.
