@@ -1,0 +1,128 @@
+{
+  "old LLM prompt / OCR": {
+    "span+context": 0.867,
+    "span only": 0.645,
+    "context only": 0.866,
+    "n_spans": 400
+  },
+  "old LLM prompt / miscounting": {
+    "span+context": 0.914,
+    "span only": 0.89,
+    "context only": 0.82,
+    "n_spans": 400
+  },
+  "old LLM prompt / other": {
+    "span+context": 0.867,
+    "span only": 0.811,
+    "context only": 0.799,
+    "n_spans": 400
+  },
+  "old heuristic / invention": {
+    "span+context": 1.0,
+    "span only": 1.0,
+    "context only": 0.919,
+    "n_spans": 150
+  },
+  "old heuristic / mischaracterization": {
+    "span+context": 0.943,
+    "span only": 0.951,
+    "context only": 0.679,
+    "n_spans": 150
+  },
+  "old heuristic / OCR": {
+    "span+context": 0.999,
+    "span only": 0.835,
+    "context only": 0.998,
+    "n_spans": 450
+  },
+  "old heuristic / miscounting": {
+    "span+context": 0.923,
+    "span only": 0.895,
+    "context only": 0.838,
+    "n_spans": 450
+  },
+  "old heuristic / other": {
+    "span+context": 0.978,
+    "span only": 0.821,
+    "context only": 0.952,
+    "n_spans": 450
+  },
+  "C2 new heuristic / OCR": {
+    "span+context": 0.84,
+    "span only": 0.82,
+    "context only": 0.701,
+    "n_spans": 300
+  },
+  "C2 new heuristic / miscounting": {
+    "span+context": 0.813,
+    "span only": 0.75,
+    "context only": 0.749,
+    "n_spans": 586
+  },
+  "C2 new heuristic / other": {
+    "span+context": 0.925,
+    "span only": 0.913,
+    "context only": 0.784,
+    "n_spans": 490
+  },
+  "C4 retrieval / invention": {
+    "span+context": 0.651,
+    "span only": 0.541,
+    "context only": 0.664,
+    "n_spans": 246
+  },
+  "C4 retrieval / mischaracterization": {
+    "span+context": 0.561,
+    "span only": 0.491,
+    "context only": 0.569,
+    "n_spans": 252
+  },
+  "C4 retrieval / OCR": {
+    "span+context": 0.512,
+    "span only": 0.477,
+    "context only": 0.527,
+    "n_spans": 252
+  },
+  "C4 retrieval / miscounting": {
+    "span+context": 0.658,
+    "span only": 0.547,
+    "context only": 0.668,
+    "n_spans": 355
+  },
+  "C4 retrieval / other": {
+    "span+context": 0.701,
+    "span only": 0.607,
+    "context only": 0.701,
+    "n_spans": 324
+  },
+  "C4 extended / invention": {
+    "span+context": 0.635,
+    "span only": 0.561,
+    "context only": 0.629,
+    "n_spans": 2284
+  },
+  "C4 extended / mischaracterization": {
+    "span+context": 0.588,
+    "span only": 0.527,
+    "context only": 0.599,
+    "n_spans": 2263
+  },
+  "C4 extended / OCR": {
+    "span+context": 0.515,
+    "span only": 0.487,
+    "context only": 0.504,
+    "n_spans": 96
+  },
+  "C4 extended / miscounting": {
+    "span+context": 0.529,
+    "span only": 0.498,
+    "context only": 0.542,
+    "n_spans": 127
+  },
+  "C4 extended / other": {
+    "span+context": 0.57,
+    "span only": 0.512,
+    "context only": 0.562,
+    "n_spans": 98
+  }
+}
