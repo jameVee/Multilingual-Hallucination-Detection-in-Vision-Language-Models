@@ -70,7 +70,7 @@ def main():
 
     device = vr.resolve_device(args.gpu_index)
     processor = vr.load_processor(bb, source=str(adapter))
-    model, _ = vr.load_model(bb, device, args.load_in_4bit)
+    model, dtype = vr.load_model(bb, device, args.load_in_4bit)
     from peft import PeftModel
     model = PeftModel.from_pretrained(model, str(adapter))
     model.eval()
@@ -93,6 +93,9 @@ def main():
                 continue
             inputs = vr.build_inputs(processor, bb, conv["messages"], conv["_image_path"],
                                      add_generation_prompt=True).to(device)
+            # the vision tower stays in `dtype` here (training's kbit preparation makes it
+            # float32); Pixtral, unlike the others, does not cast pixel_values itself
+            inputs["pixel_values"] = inputs["pixel_values"].to(dtype)
             gen = dict(max_new_tokens=args.max_new_tokens, pad_token_id=pad_id)
             if sampled:
                 gen |= dict(do_sample=True, temperature=args.temperature, top_p=args.top_p,
