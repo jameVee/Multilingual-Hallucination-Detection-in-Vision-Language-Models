@@ -1,0 +1,9 @@
+# Official leaderboard results (submitted by the user). Columns: Cor+Lbl  Cor  IoU
+# Reference, old pipeline: 02_vlm_lora_real_data  mean 0.3976  0.4793  0.4234
+
+## Part 1 winner: qwen3vl8b seed 42 (submitted 2026-11-01)
+EN	0.3613	0.4499	0.3951
+FR	0.3997	0.4880	0.4434
+IT	0.3997	0.5019	0.4406
+ZH	0.4531	0.5345	0.4858
+mean	0.4035	0.4936	0.4412

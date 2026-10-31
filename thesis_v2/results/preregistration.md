@@ -27,3 +27,35 @@ language model, the detector and the probe may make the same errors, so combinin
 
 **Outcome (2026-11-01):** Decision 1 chose Qwen3-VL-8B, so R1 applies: 3b runs with the
 Qwen3-VL-8B judge and with a Gemma-3-12B judge in 4-bit.
+
+## R2: Stage 1 synthetic pilot (2026-11-01)
+
+Written before any pilot run started. Decision 1 and val_select diagnostics motivated the
+pilot: rare categories account for a ceiling of +0.103, invention + mischaracterization for
++0.458. That diagnostic used val_select only; val_confirm and test are untouched by it.
+
+**Question:** does any no-cost synthetic condition help before money is spent on an LLM?
+
+**Setup:** Qwen3-VL-8B, seed 42, same recipe, val_select only.
+Baseline: `p1_qwen3vl8b_seed42`, Cor+Lbl 0.4269; wrong-label records and clean false alarms
+are reported alongside it.
+
+| Condition | Added to real train |
+|---|---|
+| C1 | 8,301 upsampled duplicates |
+| C4 | 719 real-span transplants: OCR, miscounting, other |
+| C4x | C4 + 1,356 transplants: invention, mischaracterization |
+
+C4x data: `build_conditions --stage pilot`. It adds a text-only polarity-conflict check for
+the two claim categories, which rejects about half of the candidates. It has no stemming
+(`chien`/`chiens` do not match), so some conflicts remain. Every cell came in under the 230
+target, so all surviving candidates are used. C1 keeps its upsampling dose unchanged.
+
+**Promotion rule, fixed now:**
+- A condition is promoted to seeds 123 and 2024 only if its val_select gain is at least
+  **+0.0055** (the known Qwen seed standard deviation).
+- The plan's full "beats baseline" rule (3-seed mean gain above seed std, same sign on
+  val_confirm, paired bootstrap lower bound above 0) still decides any claim.
+- **Stage 2 (prompt testing) runs only if C4 or C4x is promoted.** If neither is, no LLM
+  money is spent. If only C1 is promoted, synthetic text has not been shown to help.
+- These three pilots are logged as one decision with three candidates, within the budget.

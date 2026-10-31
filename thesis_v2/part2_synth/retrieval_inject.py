@@ -105,7 +105,46 @@ def _counts(text, lang):
     return {(m.group(1).lower(), m.group(2).lower()) for m in COUNT.finditer(text)}
 
 
+CLAIM_CATEGORIES = {"invention", "mischaracterization"}
+NEGATION = {"en": {"no", "not", "none", "without", "never", "cannot", "nothing"},
+            "fr": {"ne", "pas", "aucun", "aucune", "sans", "jamais", "rien"},
+            "it": {"non", "nessun", "nessuna", "nessuno", "senza", "mai", "niente"}}
+ZH_NEGATION = "不没无未非"
+GENERIC = {"en": {"image", "photo", "picture", "visible", "shown", "appears", "seen", "there", "that", "which"},
+           "fr": {"image", "photo", "visible", "semble", "cette", "cela", "pour", "plus"},
+           "it": {"immagine", "foto", "visibile", "sembra", "questa", "questo", "sono", "dell"}}
+ZH_GENERIC = set("的了是在有和与及或图片中这那一个它们其也都很上下左右看到可以从")
+
+
+def _negated(text, lang):
+    if lang == "zh":
+        return any(c in text for c in ZH_NEGATION)
+    low = text.lower()
+    return bool(tokens(low, lang) & NEGATION[lang]) or "n't" in low or (lang == "fr" and bool(re.search(r"\bn['’]", low)))
+
+
+def _content(text, lang):
+    if lang == "zh":
+        return set(CJK.findall(text)) - ZH_GENERIC
+    return {w for w in tokens(text, lang) if len(w) > 2} - STOPWORDS[lang] - NEGATION[lang] - GENERIC[lang]
+
+
+def polarity_conflict(new_sentence, rest, lang):
+    """A claim next to a sentence about the same thing with the opposite polarity: "there are
+    five fish" + "no fish can be seen". The content-word overlap is a text-only proxy, so
+    it over-rejects; that only costs pool size, and it avoids teaching the shortcut "flag
+    whatever the rest of the answer contradicts"."""
+    need = 2 if lang == "zh" else 1
+    new, neg = _content(new_sentence, lang), _negated(new_sentence, lang)
+    for s, e in sentences(rest):
+        if _negated(rest[s:e], lang) != neg and len(new & _content(rest[s:e], lang)) >= need:
+            return True
+    return False
+
+
 def contradicts(new_sentence, rest, category, lang):
+    if category in CLAIM_CATEGORIES:
+        return polarity_conflict(new_sentence, rest, lang)
     if category == "miscounting":
         new = _counts(new_sentence, lang)
         old = _counts(rest, lang)

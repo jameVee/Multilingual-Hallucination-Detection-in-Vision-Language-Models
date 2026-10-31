@@ -1,0 +1,127 @@
+{
+  "invention": {
+    "n_real": 14473,
+    "n_synth": 1618,
+    "ks_len": 0.08443608592621266,
+    "ks_pos": 0.040914777196772945,
+    "ks_len_unweighted": 0.09092323739605668,
+    "ks_pos_unweighted": 0.040416932531203154,
+    "tv_prob": 0.014478133572449856,
+    "len_median": [
+      14.0,
+      12.0
+    ],
+    "pos_median": [
+      0.45161290322580644,
+      0.42081200558399257
+    ],
+    "checks": {
+      "ks_len": true,
+      "ks_pos": true,
+      "tv_prob": true
+    },
+    "pass": true
+  },
+  "mischaracterization": {
+    "n_real": 13609,
+    "n_synth": 1637,
+    "ks_len": 0.032352664713289125,
+    "ks_pos": 0.04633919418483057,
+    "ks_len_unweighted": 0.0347453239939271,
+    "ks_pos_unweighted": 0.0459110367196095,
+    "tv_prob": 0.008283084431576247,
+    "len_median": [
+      7.0,
+      7.0
+    ],
+    "pos_median": [
+      0.38271604938271603,
+      0.4166666666666667
+    ],
+    "checks": {
+      "ks_len": true,
+      "ks_pos": true,
+      "tv_prob": true
+    },
+    "pass": true
+  },
+  "OCR": {
+    "n_real": 1284,
+    "n_synth": 341,
+    "ks_len": 0.04337909192470735,
+    "ks_pos": 0.06206683864519709,
+    "ks_len_unweighted": 0.042734398552909225,
+    "ks_pos_unweighted": 0.05945039785859803,
+    "tv_prob": 0.014356711522825472,
+    "len_median": [
+      5.0,
+      5.0
+    ],
+    "pos_median": [
+      0.4841824841824842,
+      0.44
+    ],
+    "in_quote": [
+      0.7414330218068536,
+      0.7478005865102639
+    ],
+    "checks": {
+      "ks_len": true,
+      "ks_pos": true,
+      "tv_prob": true,
+      "in_quote": true
+    },
+    "pass": true
+  },
+  "miscounting": {
+    "n_real": 2747,
+    "n_synth": 436,
+    "ks_len": 0.046917277652929745,
+    "ks_pos": 0.06218441700598942,
+    "ks_len_unweighted": 0.107294696800179,
+    "ks_pos_unweighted": 0.06745223312838355,
+    "tv_prob": 0.01923866904012049,
+    "len_median": [
+      3.0,
+      3.0
+    ],
+    "pos_median": [
+      0.3391812865497076,
+      0.3333333333333333
+    ],
+    "number_only": [
+      0.6516199490353113,
+      0.5711009174311926
+    ],
+    "checks": {
+      "ks_len": true,
+      "ks_pos": true,
+      "tv_prob": true,
+      "number_only": true
+    },
+    "pass": true
+  },
+  "other": {
+    "n_real": 1480,
+    "n_synth": 369,
+    "ks_len": 0.11622924145756208,
+    "ks_pos": 0.07441414103755206,
+    "ks_len_unweighted": 0.11731304475206916,
+    "ks_pos_unweighted": 0.07431150662857977,
+    "tv_prob": 0.0004412949534900795,
+    "len_median": [
+      9.0,
+      7.0
+    ],
+    "pos_median": [
+      0.2667919799498747,
+      0.21863799283154123
+    ],
+    "checks": {
+      "ks_len": true,
+      "ks_pos": true,
+      "tv_prob": true
+    },
+    "pass": true
+  }
+}

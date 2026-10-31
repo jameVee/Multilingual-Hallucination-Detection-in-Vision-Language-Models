@@ -37,6 +37,7 @@ CATEGORIES = ["OCR", "miscounting", "other"]
 LANGS = ["en", "fr", "it", "zh"]
 TARGET_PER_CELL = 100
 OVERSAMPLE = 2.0
+PILOT_CLAIMS_PER_CELL = 230
 
 QUOTED_SPAN = re.compile(r'["“«「]\s*([^"”»」\n]{2,60}?)\s*["”»」]|\*\*([^*\n]{2,60})\*\*')
 EXCL_NEXT = {"%", "percent", "pour", "per", "cm", "mm", "m", "km", "kg", "g", "lb", "lbs", "mph", "h", "hours",
@@ -697,6 +698,31 @@ def stage_finalize(train):
     realism.print_report(rep)
 
 
+def stage_pilot(train):
+    """Stage 1 pilot: invention + mischaracterization records for "C4 extended" (see
+    results/preregistration.md, R2). Trained together with C4_candidates.jsonl, so the
+    extended condition differs from C4 by exactly these records."""
+    cats = ["invention", "mischaracterization"]
+    cands = retrieval_inject.build_candidates(train, cats, DATA_SEED)
+    rows = []
+    for cat in cats:
+        for lg in LANGS:
+            pool = cands[(cat, lg)]
+            seed = DATA_SEED + 100 + cats.index(cat) * 10 + LANGS.index(lg)
+            ordered = realism.matched_order(pool, [first_span_len(r, cat) for r in pool],
+                                            realism.real_lengths(train, cat, lg), seed)
+            rows.extend(ordered[:PILOT_CLAIMS_PER_CELL])
+    write_jsonl(PART2_DATA_DIR / "C4x_claims.jsonl", rows)
+    print(f"pool {({f'{k[0][:5]}/{k[1]}': len(v) for k, v in sorted(cands.items())})}")
+    print(f"kept {len(rows)}  modes {dict(Counter(r['_meta']['mode'] for r in rows))}")
+    extended = data_io.load_jsonl(PART2_DATA_DIR / "C4_candidates.jsonl") + rows
+    rep = {c: realism.compare(train, extended, c) for c in data_io.LABEL_ORDER}
+    (realism.RESULTS_DIR / "part2_pilot_realism.json").write_text(json.dumps(rep, indent=2))
+    for c, x in rep.items():
+        print(f"  {c:20} n={x['n_synth']:5} KS(len)={x['ks_len']:.3f} KS(pos)={x['ks_pos']:.3f} "
+              f"TV(prob)={x['tv_prob']:.3f} -> {'ok' if x['pass'] else 'FAIL'}")
+
+
 def stage_preview(method, n, seed=0):
     name = {"C2": "C2_candidates", "C3": "C3_llm", "C4": "C4_candidates"}[method]
     path = PART2_DATA_DIR / f"{name}.jsonl"
@@ -710,13 +736,13 @@ def stage_preview(method, n, seed=0):
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--stage", required=True, choices=["c1c4", "sites", "finalize", "preview"])
+    p.add_argument("--stage", required=True, choices=["c1c4", "sites", "finalize", "preview", "pilot"])
     p.add_argument("--method", default="C2")
     p.add_argument("--n", type=int, default=10)
     args = p.parse_args()
     train = data_io.load_jsonl(data_io.TRAIN_FILE)
     {"c1c4": lambda: stage_c1c4(train), "sites": lambda: stage_sites(train),
-     "finalize": lambda: stage_finalize(train), "preview": lambda: stage_preview(args.method, args.n)}[args.stage]()
+     "finalize": lambda: stage_finalize(train), "pilot": lambda: stage_pilot(train), "preview": lambda: stage_preview(args.method, args.n)}[args.stage]()
 
 
 if __name__ == "__main__":
