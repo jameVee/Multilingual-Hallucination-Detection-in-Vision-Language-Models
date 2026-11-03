@@ -59,3 +59,18 @@ target, so all surviving candidates are used. C1 keeps its upsampling dose uncha
 - **Stage 2 (prompt testing) runs only if C4 or C4x is promoted.** If neither is, no LLM
   money is spent. If only C1 is promoted, synthetic text has not been shown to help.
 - These three pilots are logged as one decision with three candidates, within the budget.
+
+**Outcome (2026-11-03):** no condition promoted, so no LLM money is spent (Stage 2 does
+not run). val_select Cor+Lbl against 0.4269, with the paired-bootstrap 95% CI:
+
+| Condition | Cor+Lbl | Gain | 95% CI | Cor | IoU | Wrong-label records | Clean false alarms |
+|---|---|---|---|---|---|---|---|
+| C0 baseline | 0.4269 | – | – | 0.4771 | 0.4460 | 121 | 22 |
+| C1 | 0.4245 | -0.0024 | [-0.0142, +0.0100] | 0.4856 | 0.4548 | 211 | 44 |
+| C4 | 0.4229 | -0.0040 | [-0.0130, +0.0056] | 0.4806 | 0.4488 | 144 | 21 |
+| C4x | 0.4293 | +0.0024 | [-0.0082, +0.0135] | 0.4866 | 0.4524 | 174 | 37 |
+
+Every condition raised Cor and IoU (spans found better) and raised wrong-label records,
+so Cor+Lbl stayed within noise. This is the old solutions 03–06 pattern, now isolated
+condition by condition. Training compute is not held fixed: more records means more
+optimizer steps (C0 3,020; C4 3,200; C4x 3,538; C1 5,094).
