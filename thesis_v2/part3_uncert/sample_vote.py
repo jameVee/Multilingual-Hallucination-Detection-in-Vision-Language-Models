@@ -13,6 +13,7 @@ Steps (all on val_select / val_confirm -- never on test):
   --decide      Decision 3: k in {2, 3, 4} (3 candidates) on val_select, logged in the
                 decision log; the chosen k is then scored on val_confirm and the
                 outcome attached to the decision. Writes val and test predictions.
+                Rerun with --test once test sampling is done: the logged k is reused.
 
 Usage:
     python -m thesis_v2.part3_uncert.sample_vote --val runs/.../val_samples8_T0.7.jsonl --diversity
@@ -95,20 +96,26 @@ def main():
         p.error("pass --diversity or --decide")
 
     val = data_io.load_jsonl(data_io.VAL_FILE)
-    cand = {}
-    for k in K_CANDIDATES:
-        res, _ = ev.evaluate(predictions(val_samples, val, k), "val_select")
-        cand[f"k={k}"] = res["primary"]
-        print(ev.format_result(f"{args.name} k={k}", res))
-    chosen = decision_log.record_decision(f"D3_{args.name}", "3a sampling vote: votes threshold k",
-                                          cand)
-    k = int(chosen.split("=")[1])
-    val_pred = predictions(val_samples, val, k)
-    conf, _ = ev.evaluate(val_pred, "val_confirm")
-    decision_log.record_confirmation(f"D3_{args.name}", {"val_confirm_primary": conf["primary"]})
-    print(ev.format_result(f"{args.name} k={k}", conf))
-    ev.save_scores(args.name, ev.evaluate(val_pred, "val_select")[0])
-    ev.save_scores(args.name, conf)
+    done = decision_log.get_decision(f"D3_{args.name}")
+    if done:   # decided earlier (e.g. before test sampling finished): reuse k, never re-decide
+        k = int(done["chosen"].split("=")[1])
+        val_pred = predictions(val_samples, val, k)
+        print(f"D3_{args.name} already decided: k={k}")
+    else:
+        cand = {}
+        for k in K_CANDIDATES:
+            res, _ = ev.evaluate(predictions(val_samples, val, k), "val_select")
+            cand[f"k={k}"] = res["primary"]
+            print(ev.format_result(f"{args.name} k={k}", res))
+        chosen = decision_log.record_decision(f"D3_{args.name}",
+                                              "3a sampling vote: votes threshold k", cand)
+        k = int(chosen.split("=")[1])
+        val_pred = predictions(val_samples, val, k)
+        conf, _ = ev.evaluate(val_pred, "val_confirm")
+        decision_log.record_confirmation(f"D3_{args.name}", {"val_confirm_primary": conf["primary"]})
+        print(ev.format_result(f"{args.name} k={k}", conf))
+        ev.save_scores(args.name, ev.evaluate(val_pred, "val_select")[0])
+        ev.save_scores(args.name, conf)
 
     out_dir = RUNS_DIR / "part3" / args.name
     write(val_pred, out_dir / "val_predictions.jsonl")

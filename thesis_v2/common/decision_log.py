@@ -27,6 +27,11 @@ def _read():
     return [json.loads(l) for l in LOG_FILE.read_text(encoding="utf-8").splitlines() if l.strip()]
 
 
+def get_decision(decision_id):
+    """The logged entry for an already-made decision, or None."""
+    return next((d for d in _read() if d["decision_id"] == decision_id), None)
+
+
 def record_decision(decision_id, description, candidates, metric="primary_cor_lbl (val_select)",
                     chosen=None, rule=None):
     """candidates: dict {candidate_name: val_select score}. Chooses the max unless
