@@ -1,7 +1,9 @@
 """Predict with a trained adapter on val or test, greedy or sampled.
 
-Greedy (default) writes {"id", "labels"} per record -- the submission format.
-Sampled (--num_samples N, Part 3a) writes {"id", "labels": [], "samples": [span lists]}.
+Greedy (default) writes {"id", "labels", "raw"} per record ("labels" is the submission format).
+Sampled (--num_samples N, Part 3a) writes {"id", "labels": [], "samples": [span lists], "raw": [...]}.
+Spans are decoded with common/span_io (keeps dual-labeled text); "raw" holds the generations,
+so a decoder can be re-applied later without the GPU (common/redecode.py).
 
 Always predicts on EVERY record of the chosen file (val: all 3,020, scored per half
 later; test: all 4,898). Output is written incrementally and --resume skips ids
@@ -27,7 +29,7 @@ from pathlib import Path
 import torch
 
 from thesis_v2.common.paths import REPO_ROOT
-from thesis_v2.common import backbones, vlm_runtime as vr
+from thesis_v2.common import backbones, span_io, vlm_runtime as vr
 from solutions.common import data_io, vlm_io
 
 
@@ -88,7 +90,7 @@ def main():
                 # Never silently drop a record: an empty prediction is written and counted,
                 # so coverage stays complete and the count is visible in the log.
                 n_unresolvable += 1
-                row = {"id": rec["id"], "labels": []} | ({"samples": []} if sampled else {})
+                row = {"id": rec["id"], "labels": []} | ({"samples": [], "raw": []} if sampled else {"raw": ""})
                 fout.write(json.dumps(row, ensure_ascii=False) + "\n")
                 continue
             inputs = vr.build_inputs(processor, bb, conv["messages"], conv["_image_path"],
@@ -103,10 +105,11 @@ def main():
             else:
                 gen |= dict(do_sample=False)
             out = model.generate(**inputs, **gen)
-            texts = processor.batch_decode(out[:, inputs["input_ids"].shape[1]:], skip_special_tokens=True)
-            span_lists = [vlm_io.predict_spans_from_raw_output(rec["response"], t.strip()) for t in texts]
-            row = ({"id": rec["id"], "labels": [], "samples": span_lists} if sampled
-                   else {"id": rec["id"], "labels": span_lists[0]})
+            texts = [t.strip() for t in
+                     processor.batch_decode(out[:, inputs["input_ids"].shape[1]:], skip_special_tokens=True)]
+            span_lists = [span_io.spans_from_raw(rec["response"], t) for t in texts]
+            row = ({"id": rec["id"], "labels": [], "samples": span_lists, "raw": texts} if sampled
+                   else {"id": rec["id"], "labels": span_lists[0], "raw": texts[0]})
             fout.write(json.dumps(row, ensure_ascii=False) + "\n")
             fout.flush()
     print(f"wrote -> {out_path}  (unresolvable images: {n_unresolvable})")
