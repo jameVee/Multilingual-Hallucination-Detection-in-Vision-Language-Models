@@ -45,13 +45,22 @@ def load_samples(path):
     return {r["id"]: r["samples"] for r in data_io.load_jsonl(path)}
 
 
-def predictions(samples, records, k):
+def load_greedy(path):
+    if path is None:
+        return None
+    path = Path(path) if Path(path).is_absolute() else REPO_ROOT / path
+    return {r["id"]: r["labels"] for r in data_io.load_jsonl(path)}
+
+
+def predictions(samples, records, k, per_label=False, greedy=None):
+    """greedy: {id: spans} of the same adapter's greedy prediction, added as one more voter."""
     out = []
     for r in records:
         spans = samples.get(r["id"])
-        if spans is None:
+        if spans is None or (greedy is not None and r["id"] not in greedy):
             raise ev.CoverageError(f"no samples for {r['id']}")
-        out.append({"id": r["id"], "labels": vote(spans, len(r["response"]), k)})
+        voters = spans + ([greedy[r["id"]]] if greedy is not None else [])
+        out.append({"id": r["id"], "labels": vote(voters, len(r["response"]), k, per_label=per_label)})
     return out
 
 
@@ -84,9 +93,15 @@ def main():
     p.add_argument("--name", default="3a")
     p.add_argument("--diversity", action="store_true")
     p.add_argument("--decide", action="store_true")
+    p.add_argument("--per_label", action="store_true", help="vote on each label separately (R3)")
+    p.add_argument("--greedy_val", default=None, help="greedy predictions of the same adapter, one more voter")
+    p.add_argument("--greedy_test", default=None)
     args = p.parse_args()
+    if bool(args.greedy_val) != bool(args.greedy_test) and args.test:
+        p.error("--greedy_val and --greedy_test go together")
 
     val_samples = load_samples(args.val)
+    greedy_val = load_greedy(args.greedy_val)
     if args.diversity:
         d = diversity(val_samples)
         print(f"mean pairwise Jaccard of decodes (50 val_select records): {d:.3f} -> "
@@ -95,22 +110,27 @@ def main():
     if not args.decide:
         p.error("pass --diversity or --decide")
 
+    def pred(samples, records, k, greedy):
+        return predictions(samples, records, k, per_label=args.per_label, greedy=greedy)
+
     val = data_io.load_jsonl(data_io.VAL_FILE)
     done = decision_log.get_decision(f"D3_{args.name}")
     if done:   # decided earlier (e.g. before test sampling finished): reuse k, never re-decide
         k = int(done["chosen"].split("=")[1])
-        val_pred = predictions(val_samples, val, k)
+        val_pred = pred(val_samples, val, k, greedy_val)
         print(f"D3_{args.name} already decided: k={k}")
     else:
         cand = {}
         for k in K_CANDIDATES:
-            res, _ = ev.evaluate(predictions(val_samples, val, k), "val_select")
+            res, _ = ev.evaluate(pred(val_samples, val, k, greedy_val), "val_select")
             cand[f"k={k}"] = res["primary"]
             print(ev.format_result(f"{args.name} k={k}", res))
+        how = (f"{'per-label' if args.per_label else 'single-label'} vote, "
+               f"{'samples + greedy' if greedy_val else 'samples only'}")
         chosen = decision_log.record_decision(f"D3_{args.name}",
-                                              "3a sampling vote: votes threshold k", cand)
+                                              f"3a sampling vote: votes threshold k ({how})", cand)
         k = int(chosen.split("=")[1])
-        val_pred = predictions(val_samples, val, k)
+        val_pred = pred(val_samples, val, k, greedy_val)
         conf, _ = ev.evaluate(val_pred, "val_confirm")
         decision_log.record_confirmation(f"D3_{args.name}", {"val_confirm_primary": conf["primary"]})
         print(ev.format_result(f"{args.name} k={k}", conf))
@@ -121,7 +141,8 @@ def main():
     write(val_pred, out_dir / "val_predictions.jsonl")
     if args.test:
         test = data_io.load_jsonl(data_io.TEST_FILE)
-        write(predictions(load_samples(args.test), test, k), out_dir / "test_predictions.jsonl")
+        write(pred(load_samples(args.test), test, k, load_greedy(args.greedy_test)),
+              out_dir / "test_predictions.jsonl")
     print(f"chosen k={k} -> {out_dir}")
 
 

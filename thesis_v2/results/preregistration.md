@@ -74,3 +74,54 @@ Every condition raised Cor and IoU (spans found better) and raised wrong-label r
 so Cor+Lbl stayed within noise. This is the old solutions 03–06 pattern, now isolated
 condition by condition. Training compute is not held fixed: more records means more
 optimizer steps (C0 3,020; C4 3,200; C4x 3,538; C1 5,094).
+
+## R3: label-structure fixes (2026-11-05)
+
+Written before any candidate below was scored on val.
+
+**What motivated it.** These diagnostics used existing predictions on val_select (counts and
+gold oracles, no candidate system scored) plus train:
+- Wrong labels in the Stage 1 pilot are mostly invention <-> mischaracterization, not the
+  synthesized categories. C1, which adds no new text, has the most (232; C0 128).
+- Annotators often disagree: gold gives the same text both invention and mischaracterization
+  in 221 of 1,515 val_select records (1,766 train records). Every system outputs this in
+  0-11 records.
+  - The shared decoder (`solutions/common/vlm_io.map_spans_to_positions`) drops a span that
+    overlaps an already-placed span by more than half, whatever the label.
+  - The 3a vote keeps one label per character (argmax).
+  - The 3b probe is trained on one label per token (the first gold span wins) and keeps the
+    argmax head.
+- Fed perfect output (gold targets), the shared decoder caps val_select Cor+Lbl at 0.925.
+  On the train round trip it loses 22-38% of gold spans per category.
+- Oracle (gold used, diagnostic only): adding the second label where gold has it gives
+  +0.032 to +0.040 Cor+Lbl for C0, C1 and C4x.
+
+**Fixes, all fixed now:**
+1. **Decoder** `common/span_io.py`, variant `near_prev`. The variant was chosen on the train
+   round trip only: records not reproduced 3,939 (old) -> 2,780 / 2,693 / 2,531. Most
+   remaining losses are whitespace trimming. With perfect output it gives val_select
+   0.984 (old 0.925). Raw generations are saved from now on.
+   - Every Qwen run is re-predicted on val; the new baseline is `dec2_p1_qwen3vl8b_seed42`.
+   - The old-decoder numbers stay in the log and are reported as such.
+   - Check: the new run decoded the old way must reproduce the old predictions.
+2. **Part 2 re-check (decision D2b, 3 candidates).** C1, C4 and C4x under the new decoder
+   against the new C0. The R2 promotion rule is unchanged (val_select gain >= +0.0055),
+   and so is the Stage 2 rule (LLM money only if C4 or C4x is promoted).
+3. **3a v2 (decision D3_3a2_qwen_seed42, candidates k in {2,3,4}).**
+   - 8 decodes, T=0.7, re-sampled with raw saved and the new decoder.
+   - The same adapter's greedy prediction is a 9th voter. Single decodes score below greedy
+     on val_select (mean 0.4078 vs 0.4269), so greedy is included.
+   - Per-label vote (`voting.vote(per_label=True)`).
+   - Chosen on val_select and confirmed on val_confirm. The original D3 stays as recorded.
+4. **3b v2 (`crf_probe --multilabel`).**
+   - Every gold span covering a token sets its category (checked to contain the old single
+     label), and each head is decoded independently.
+   - Same hyperparameters, seeds 42/123/2024, early stopping on val_select loss. Nothing is
+     selected.
+   - The five CRFs are batched: same loss (checked), about 4.8x faster.
+5. **Integration (F1-F4) is unchanged** and uses the fixed versions. F2 = F1 + 3a v2 is where
+   the 3a per-label vote also acts as a label-consistency gate for a Part 2 model.
+
+**Not decided here:** a revised synthetic condition (e.g. synthetic spans carrying the real
+dual-label structure, training steps held equal to C0). It will be written as R4 after
+D2b, before any training.

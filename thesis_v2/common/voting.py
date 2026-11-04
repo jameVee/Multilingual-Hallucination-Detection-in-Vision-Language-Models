@@ -9,6 +9,12 @@ For each character c of the response, with voters i = 1..N (weight w_i, default 
     label(c)    = argmax_label sum_i w_i * flag_i(c, label) * prob_i(c)
 Characters with votes >= k are kept; consecutive kept characters with the same label
 form one output span, whose prob is the mean prob(c) over its characters.
+
+per_label=True (results/preregistration.md, R3): each label is voted on separately, so
+the same text can keep two labels (as gold often does) and a label survives only where at
+least k voters give that label:
+    votes_L(c)  = sum_i w_i * [c inside a span of voter i labeled L]
+    prob_L(c)   = (1 / sum_i w_i) * sum_i w_i * flag_i(c, L) * prob_i(c, L)
 """
 from __future__ import annotations
 
@@ -19,11 +25,13 @@ from solutions.common import data_io
 LABELS = data_io.LABEL_ORDER
 
 
-def vote(span_lists, length, k, weights=None):
+def vote(span_lists, length, k, weights=None, per_label=False):
     n = len(span_lists)
     if n == 0 or length == 0:
         return []
     w = np.ones(n) if weights is None else np.asarray(weights, float)
+    if per_label:
+        return _vote_per_label(span_lists, length, k, w)
     votes = np.zeros(length)
     prob_sum = np.zeros(length)
     conf = np.zeros((len(LABELS), length))
@@ -59,3 +67,37 @@ def vote(span_lists, length, k, weights=None):
             out.append({"start": i, "end": j, "prob": round(p, 4), "label": LABELS[label[i]]})
         i = j
     return out
+
+
+def _vote_per_label(span_lists, length, k, w):
+    votes = np.zeros((len(LABELS), length))
+    prob_sum = np.zeros((len(LABELS), length))
+    for wi, spans in zip(w, span_lists):
+        flag = np.zeros((len(LABELS), length), bool)
+        p_voter = np.zeros((len(LABELS), length))    # overlapping spans of one voter: max, not sum
+        for s in spans:
+            a, b = max(0, int(s["start"])), min(length, int(s["end"]))
+            if a >= b or s["label"] not in LABELS:
+                continue
+            li = LABELS.index(s["label"])
+            flag[li, a:b] = True
+            p_voter[li, a:b] = np.maximum(p_voter[li, a:b], float(s.get("prob", 1.0)))
+        votes += wi * flag
+        prob_sum += wi * p_voter
+    prob = np.clip(prob_sum / w.sum(), 0.0, 1.0)
+    out = []
+    for li, lab in enumerate(LABELS):
+        keep = votes[li] >= k
+        i = 0
+        while i < length:
+            if not keep[i]:
+                i += 1
+                continue
+            j = i
+            while j < length and keep[j]:
+                j += 1
+            p = float(prob[li, i:j].mean())
+            if p > 0:
+                out.append({"start": i, "end": j, "prob": round(p, 4), "label": lab})
+            i = j
+    return sorted(out, key=lambda s: (s["start"], s["label"]))
