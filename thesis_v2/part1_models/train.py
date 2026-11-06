@@ -61,6 +61,10 @@ def main():
     p.add_argument("--resume", action="store_true")
     p.add_argument("--max_steps", type=int, default=None,
                    help="Stop after this many optimizer steps (feasibility gate / smoke test).")
+    p.add_argument("--step_budget", type=int, default=None,
+                   help="R4: train for exactly this many optimizer steps over the shuffled data "
+                        "(the LR schedule spans the budget, the run counts as complete) -- holds "
+                        "compute equal to C0 when the training set is larger.")
     p.add_argument("--no_4bit", dest="load_in_4bit", action="store_false")
     p.set_defaults(load_in_4bit=True)
     args = p.parse_args()
@@ -109,6 +113,13 @@ def main():
 
     optimizer = torch.optim.AdamW([q for q in model.parameters() if q.requires_grad], lr=args.lr, weight_decay=0.01)
     total_steps = max(1, (len(examples) // args.grad_accum) * args.epochs)
+    if args.step_budget:
+        if args.step_budget > total_steps:
+            raise SystemExit(f"--step_budget {args.step_budget} exceeds the {total_steps} steps of "
+                             f"{args.epochs} epochs -- raise --epochs")
+        total_steps = args.step_budget
+        print(f"[{bb.name}] step budget {total_steps} "
+              f"(= {total_steps * args.grad_accum / len(examples):.2f} passes over {len(examples)} examples)")
 
     def lr_lambda(step):
         if step < args.warmup_steps:
@@ -138,7 +149,7 @@ def main():
     model.train()
     gstep, skipped, seq_lens = gstep0, 0, []
     t0 = time.time()
-    stop = False
+    stop = budget_done = False
     cum = done
     for epoch in range(args.epochs):
         optimizer.zero_grad()
@@ -165,6 +176,9 @@ def main():
                 if args.max_steps and gstep >= args.max_steps:
                     stop = True
                     break
+                if args.step_budget and gstep >= args.step_budget:
+                    stop, budget_done = True, True
+                    break
             pbar.set_postfix(loss=f"{loss.item() * args.grad_accum:.4f}", step=f"{gstep}/{total_steps}")
         if stop:
             break
@@ -178,7 +192,7 @@ def main():
         "optimizer_steps": gstep, "total_steps_planned": total_steps,
     }
     (out / "train_stats.json").write_text(json.dumps(stats, indent=2))
-    save(len(examples) * args.epochs if not stop else cum + 1, complete=not stop)
+    save(len(examples) * args.epochs if not stop else cum + 1, complete=budget_done or not stop)
     print(json.dumps(stats, indent=2))
 
 

@@ -125,3 +125,66 @@ gold oracles, no candidate system scored) plus train:
 **Not decided here:** a revised synthetic condition (e.g. synthetic spans carrying the real
 dual-label structure, training steps held equal to C0). It will be written as R4 after
 D2b, before any training.
+
+## R4: prior-matched synthetic conditions (2026-11-06)
+
+Written after D2b and before any R4 training. Nothing below has been trained or scored.
+
+**The R3 guess is ruled out.** Synthetic records already carry the real dual-label
+structure. Records with two different labels on overlapping text, among records with a
+hallucination: real train 29.1%, C1 33.4%, C4 31.4%, C4x 31.9%.
+
+**What the D2b runs show (diagnostic, existing predictions, both val halves).** Cor+Lbl is
+split into the part from gold-clean records and the part from gold-labeled records
+(4-language mean, change vs dec2 C0, val_select / val_confirm):
+
+| | Labeled-record part | Clean-record part | Clean records flagged (val_select) |
+|---|---|---|---|
+| C1 | +0.0150 / +0.0125 | -0.0145 / -0.0073 | 22 -> 44 |
+| C4x | +0.0120 / +0.0126 | -0.0099 / -0.0067 | 22 -> 37 |
+| C4 | -0.0032 / -0.0061 | +0.0006 / +0.0006 | 22 -> 21 |
+
+- C1 and C4x detect hallucinations better on both halves, and lose the same amount by
+  flagging clean records (a flagged clean record scores 0 instead of 1).
+- Every added record carries a hallucination. The hallucinated share of training records
+  is 71.56% in real train, 73.2% with C4, 75.7% with C4x and 83.1% with C1. False alarms
+  follow the same order.
+- Compute was not held fixed either: C0 3,020 optimizer steps, C4x 3,538, C1 5,094.
+
+**Hypothesis.** The extra false alarms come from the shifted hallucinated share and the
+extra steps, not from the synthetic text. Holding both fixed keeps the labeled-record
+gain and removes the clean-record loss.
+
+**Conditions (one decision, D2c_R4, 2 candidates).**
+1. **C4x-b:** real train + C4 + C4x transplants (2,075) + 825 clean duplicates
+   (`part2_synth/build_r4.py`). The duplicates are sampled without replacement (seed 0)
+   from the 1,201 clean base records the transplants were made from, so the same image
+   and prompt are also seen without the hallucination. Hallucinated share 71.56%.
+2. **C1-b:** real train + C1 upsampling (8,301) + 3,299 clean duplicates drawn from all
+   clean train records (without replacement, seed 0). Hallucinated share 71.56%.
+- Both train for exactly **3,020 optimizer steps** (`train.py --step_budget 3020`; the LR
+  schedule spans the budget). That is C0's step count, about 1.6 passes for C4x-b and 1.0
+  for C1-b. Every other hyperparameter is C0's. Seed 42.
+- The data files are fixed before training: `R4_C4xb_clean.jsonl`, `R4_C1b_clean.jsonl`.
+
+**Rules (unchanged).**
+- Baseline `dec2_p1_qwen3vl8b_seed42`, val_select 0.4310. A condition is promoted to seeds
+  123 and 2024 if its val_select gain is at least +0.0055. The threshold applies to each
+  condition on its own, so C4x-b may be checked as soon as it is scored. Both are logged
+  as one decision once both are scored.
+- LLM spend (Stage 2) runs only if C4x-b is promoted. If only C1-b is promoted,
+  synthetic text has not been shown to help.
+- Any claim still needs the full 3-seed "beats baseline" rule.
+- Reported in every case: the clean / labeled split above. If the clean-record part
+  still drops, the share and steps do not explain the false alarms, and that is reported.
+  No further revision of Part 2 follows from R4.
+
+**Compute order (by what each result decides).**
+1. C4x-b seed 42: train, val, score. Decides whether Part 2 has a candidate and whether LLM
+   money is spent.
+2. C0 seeds 123 and 2024: train, greedy val and test. Every claim needs them (baseline
+   seed std, 3-seed baseline).
+3. 8 sampled decodes (T=0.7) on val and test for seeds 123 and 2024. Needed for the 3a v2
+   3-seed claim (D3_3a2 k=3 reused, not re-decided).
+4. C1-b seed 42: train, val, score.
+If C4x-b is promoted, its seeds 123 and 2024 go in right after step 2.

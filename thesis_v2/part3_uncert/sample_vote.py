@@ -96,6 +96,9 @@ def main():
     p.add_argument("--per_label", action="store_true", help="vote on each label separately (R3)")
     p.add_argument("--greedy_val", default=None, help="greedy predictions of the same adapter, one more voter")
     p.add_argument("--greedy_test", default=None)
+    p.add_argument("--k_from", default=None,
+                   help="decision id whose k is reused (other seeds of a decided method, R4): "
+                        "nothing is decided, both val halves are scored")
     args = p.parse_args()
     if bool(args.greedy_val) != bool(args.greedy_test) and args.test:
         p.error("--greedy_val and --greedy_test go together")
@@ -107,15 +110,25 @@ def main():
         print(f"mean pairwise Jaccard of decodes (50 val_select records): {d:.3f} -> "
               f"{'too similar: resample once at T=1.0' if d > DIVERSITY_LIMIT else 'ok'}")
         return
-    if not args.decide:
-        p.error("pass --diversity or --decide")
+    if not (args.decide or args.k_from):
+        p.error("pass --diversity, --decide or --k_from")
 
     def pred(samples, records, k, greedy):
         return predictions(samples, records, k, per_label=args.per_label, greedy=greedy)
 
     val = data_io.load_jsonl(data_io.VAL_FILE)
     done = decision_log.get_decision(f"D3_{args.name}")
-    if done:   # decided earlier (e.g. before test sampling finished): reuse k, never re-decide
+    if args.k_from:
+        src = decision_log.get_decision(args.k_from)
+        if src is None:
+            p.error(f"{args.k_from} is not in the decision log")
+        k = int(src["chosen"].split("=")[1])
+        val_pred = pred(val_samples, val, k, greedy_val)
+        for s in ("val_select", "val_confirm"):
+            res, _ = ev.evaluate(val_pred, s)
+            ev.save_scores(args.name, res)
+            print(ev.format_result(f"{args.name} k={k} (from {args.k_from})", res))
+    elif done:   # decided earlier (e.g. before test sampling finished): reuse k, never re-decide
         k = int(done["chosen"].split("=")[1])
         val_pred = pred(val_samples, val, k, greedy_val)
         print(f"D3_{args.name} already decided: k={k}")
