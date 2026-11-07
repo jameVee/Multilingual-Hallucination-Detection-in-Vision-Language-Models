@@ -188,3 +188,24 @@ gain and removes the clean-record loss.
    3-seed claim (D3_3a2 k=3 reused, not re-decided).
 4. C1-b seed 42: train, val, score.
 If C4x-b is promoted, its seeds 123 and 2024 go in right after step 2.
+
+**Outcome, C4x-b (2026-11-07): not promoted.** val_select 0.4228, -0.0083 vs dec2 C0
+(CI [-0.0190, +0.0023]). So no LLM money is spent: Stage 2 does not run. Exactly 3,020
+optimizer steps (checked).
+
+| val_select | Cor+Lbl | Labeled-record part | Clean-record part | Records flagged | Clean records flagged |
+|---|---|---|---|---|---|
+| C0 | 0.4310 | 0.1536 | 0.2774 | 575 | 22 |
+| C4x | 0.4332 | +0.0120 | -0.0099 | 652 | 37 |
+| C4x-b | 0.4228 | -0.0050 | -0.0033 | 577 | 27 |
+
+- The false-alarm half of the hypothesis holds. With the hallucinated share restored, the
+  number of flagged records returns to C0's (577 vs 575), and clean false alarms mostly
+  go away (27 vs 37).
+- The other half fails: the labeled-record gain disappears with them. C4x's gain on
+  labeled records came from flagging more records, not from telling hallucinated text
+  apart better.
+- Confound, introduced by R4 itself: at 3,020 steps C4x-b makes 1.61 passes, so real
+  records are seen 19,483 times instead of C0's 24,160 (-19%). This alone could cost the
+  -0.005. Per R4, no further Part 2 revision follows. C1-b stays in the queue (step 4) and
+  is logged with C4x-b as D2c_R4.
