@@ -28,3 +28,13 @@ FR	0.4049	0.4744	0.4290
 IT	0.4047	0.4871	0.4273
 ZH	0.4672	0.5344	0.4832
 mean	0.4145	0.4868	0.4323
+
+## Baseline C0 seed 2024: qwen3vl8b, dual-label decoder (submitted 2026-11-10)
+EN	0.3745	0.4479	0.3927
+FR	0.4002	0.4696	0.4188
+IT	0.3999	0.4771	0.4157
+ZH	0.4631	0.5340	0.4824
+mean	0.4094	0.4822	0.4274
+
+## Baseline C0, 3 seeds (42, 123, 2024), dual-label decoder: mean (std)
+Cor+Lbl	0.4132 (0.0034)	Cor 0.4871	IoU 0.4335
