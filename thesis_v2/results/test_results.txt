@@ -38,3 +38,11 @@ mean	0.4094	0.4822	0.4274
 
 ## Baseline C0, 3 seeds (42, 123, 2024), dual-label decoder: mean (std)
 Cor+Lbl	0.4132 (0.0034)	Cor 0.4871	IoU 0.4335
+
+## 3a v2 seed 123: per-label vote of 8 samples (T=0.7) + greedy, k=3 (from D3_3a2_qwen_seed42), C0 seed 123 adapter (submitted 2026-11-10)
+EN	0.3829	0.4481	0.3999
+FR	0.4118	0.4740	0.4375
+IT	0.4173	0.4923	0.4423
+ZH	0.4770	0.5411	0.5081
+mean	0.4223	0.4889	0.4470
+vs C0 seed 123 (same adapter): Cor+Lbl +0.0078, Cor +0.0021, IoU +0.0147; all 4 languages up on Cor+Lbl
