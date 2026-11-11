@@ -209,3 +209,25 @@ optimizer steps (checked).
   records are seen 19,483 times instead of C0's 24,160 (-19%). This alone could cost the
   -0.005. Per R4, no further Part 2 revision follows. C1-b stays in the queue (step 4) and
   is logged with C4x-b as D2c_R4.
+
+**Outcome, 3a v2 3 seeds (2026-11-11): consistent gain, but the strict rule is not met.**
+k=3 comes from D3_3a2_qwen_seed42 and is reused for seeds 123 and 2024 (`--k_from`, not
+re-decided). Every gain compares a vote with the plain greedy decode of the same adapter.
+The 3-seed CI averages each record's score over the seeds first, then runs the paired
+bootstrap.
+
+| Cor+Lbl | Seed 42 | Seed 123 | Seed 2024 | 3-seed mean gain | 3-seed CI |
+|---|---|---|---|---|---|
+| val_select | +0.0094 | +0.0063 | +0.0080 | +0.0079 (C0 std 0.0023) | [+0.0030, +0.0128] |
+| val_confirm | +0.0052 | -0.0007 | +0.0014 | +0.0020 | [-0.0034, +0.0073] |
+| test (official) | +0.0022 | +0.0078 | +0.0089 | +0.0063 (C0 std 0.0034) | -- |
+
+- (a) passes. The val_select gain of +0.0079 is more than three times the C0 seed std.
+- (b) passes the sign check: val_confirm moves the same way.
+- (b) fails the CI check: the val_confirm lower bound is -0.0034, below 0. Under the
+  pre-registered rule, 3a v2 is therefore **not** reported as beating the baseline.
+- Test (3 official submissions per method) agrees with val_select. 3a v2 is 0.4195
+  (std 0.0024) against C0's 0.4132 (std 0.0034); its worst seed beats C0's best seed.
+  Its IoU is +0.0120 higher and its Cor is -0.0010 lower. The thesis reports this as
+  a consistent gain on two of three evaluations, with confirmation inconclusive on
+  val_confirm (half of val, 1,510 records). The bar is not relaxed afterwards.
