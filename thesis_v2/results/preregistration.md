@@ -341,3 +341,29 @@ and IoU are identical. Only the prob values change):**
   submitted.
 - No further variants (other rounding, temperature, or calibration) follow from this
   result.
+
+**Outcome, R6 (D6_graded, 2026-11-12): G1 is chosen.** Before logging, G0 was checked to
+reproduce F3 exactly, and G1/G2 to keep exactly F3's characters (IoU unchanged).
+
+| val_select Cor+Lbl (Cor) | Seed 42 | Seed 123 | Seed 2024 | Mean |
+|---|---|---|---|---|
+| G0 = F3 | 0.4436 (0.4898) | 0.4402 (0.4878) | 0.4372 (0.4804) | 0.4404 |
+| **G1 graded prob** | **0.4463** (0.4945) | **0.4434** (0.4931) | **0.4401** (0.4876) | **0.4433** |
+| G2 graded vote fraction | 0.4451 (0.4917) | 0.4424 (0.4929) | 0.4390 (0.4871) | 0.4422 |
+
+| G1 vs ... (3 seeds, 95% CI from records averaged over seeds) | val_select | val_confirm |
+|---|---|---|
+| F3 | +0.0029 [+0.0017, +0.0041] | +0.0057 [+0.0040, +0.0076] |
+| C0 | +0.0145 [+0.0089, +0.0199] (C0 std 0.0023) | +0.0086 [+0.0027, +0.0148] |
+
+- **Against F3** (the R6 rule): the gain is positive on every seed and both halves, and
+  both CIs are above 0. But (a) fails narrowly: the val_select gain of +0.0029 is just
+  below F3's seed std (0.0032). By the letter of the rule, G1 does not "beat" F3. It is a
+  small, highly consistent gain (paired per seed, since G1 changes only prob values).
+- **Against C0**: G1 meets every part of the "beats baseline" rule. (a) +0.0145 is more
+  than 6 times the C0 std. (b) val_confirm moves the same way, with the CI lower bound
+  +0.0027 > 0. It is the first system in the program to pass the strict rule. Caveat
+  for the write-up: R6 was decided after D4, so this is reported as a post-hoc
+  extension of the final system, not as a pre-registered result.
+- Test files for G1, one per seed (format-checked), are in
+  `runs/integration/graded/submission_G1_seed{42,123,2024}/`.
