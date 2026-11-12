@@ -1,0 +1,91 @@
+\chapter{Problem statement}\label{chap:problem}
+
+\section{Task}
+
+A \emph{record} is a triple $x = (I, q, r)$: an image $I$, a question $q$ about it, and an answer $r = r_1 r_2 \dots r_n$ written by a VLM, a string of $n$ characters in one language $\ell(x) \in \{\mathrm{en}, \mathrm{fr}, \mathrm{it}, \mathrm{zh}\}$. Let $\mathcal{L} = \{\textsf{INV}, \textsf{MIS}, \textsf{OCR}, \textsf{CNT}, \textsf{OTH}\}$ be the five categories:
+\begin{itemize}
+    \item \textbf{invention}: entities or facts absent from the image;
+    \item \textbf{mischaracterization}: visible content described wrongly, for example its colour, size, material or position;
+    \item \textbf{OCR}: text in the image that is misread;
+    \item \textbf{miscounting}: a wrong number of visible items;
+    \item \textbf{other}: any other hallucination, in practice mostly template leakage, refusals and repetition.
+\end{itemize}
+
+\begin{Def}
+A \emph{labelled span} is a tuple $s = (a, b, p, L)$ with $0 \le a < b \le n$, a probability $p \in (0, 1]$ and a category $L \in \mathcal{L}$. It covers the characters $r_a, \dots, r_{b-1}$.
+\end{Def}
+
+The gold annotation of a record is a set $S^\star$ of labelled spans. Several annotators marked each answer, and the gold probability of a span is the share of annotators who marked it, so overlapping spans of the same category have different probabilities. For instance, a core word may have $p = 1$ while a longer phrase around it has $p = 1/3$. Different categories may overlap. In 29\% of the training records that contain a hallucination, the same text carries two categories, typically invention and mischaracterization, because annotators disagreed. A record with $S^\star = \emptyset$ is \emph{clean}.
+
+From a set of spans $S$, define the per-character score vectors $y^{S}, y^{S}_L \in \mathbb{R}^n$. Gold vectors add the probabilities of all spans covering a character:
+\begin{equation}
+    y^{\star}_L(c) = \sum_{(a,b,p,L') \in S^\star,\; L' = L,\; a \le c < b} p, \qquad
+    y^{\star}(c) = \sum_{L \in \mathcal{L}} y^{\star}_L(c).
+    \label{eq:gold-vector}
+\end{equation}
+For a prediction $\hat S$, the official scorer \emph{assigns} rather than adds: $\hat y(c)$ is the probability of the last predicted span that covers $c$, and $\hat y_L(c)$ is the same quantity restricted to spans of category $L$.
+
+\paragraph{The task.} Learn a map $f : x \mapsto \hat S$ that outputs labelled spans whose positions, categories and probabilities agree with $S^\star$, as measured by the official metrics below.
+
+\section{Official metrics}
+
+All three metrics are computed per record and averaged over the records of a language. The \emph{primary} score of a system is the unweighted mean over the four languages of its per-language Cor+Lbl. Every number in this thesis comes from the official scorer functions.
+
+\paragraph{IoU.} With $G = \{c : y^\star(c) > 0\}$ and $P = \{c : \hat y(c) > 0\}$,
+\begin{equation}
+    \mathrm{IoU}(x) = \begin{cases} |G \cap P| \,/\, |G \cup P|, & G \cup P \neq \emptyset, \\ 1, & \text{otherwise.} \end{cases}
+\end{equation}
+
+\paragraph{Cor.} The Spearman rank correlation between the gold and predicted soft vectors over all characters of the answer:
+\begin{equation}
+    \mathrm{Cor}(x) = \rho_{\mathrm{S}}\big(y^\star, \hat y\big),
+\end{equation}
+with a fallback when either vector is constant. The score is 1 if both are constant and equal in kind, both all-zero or both non-zero, and 0 otherwise. Two properties matter for this thesis.
+\begin{itemize}
+    \item A clean record scores 1 only if the system predicts nothing; a single false alarm turns it into 0.
+    \item The metric is computed on ranks, so characters inside one predicted span with one probability are \emph{tied}. A prediction can only reproduce the within-span structure of the gold vector (core versus edges) if its probability varies inside the span.
+\end{itemize}
+
+\paragraph{Cor+Lbl.} Cor computed separately for each category that appears in the gold or the prediction, then averaged:
+\begin{equation}
+    \CorLbl(x) = \begin{cases}
+        \dfrac{1}{|\Lambda(x)|} \displaystyle\sum_{L \in \Lambda(x)} \rho_{\mathrm{S}}\big(y^\star_L, \hat y_L\big), & \Lambda(x) \neq \emptyset, \\[2ex]
+        1, & \Lambda(x) = \emptyset,
+    \end{cases}
+    \qquad \Lambda(x) = \{L : S^\star \text{ or } \hat S \text{ contains } L\}.
+\end{equation}
+Predicting a wrong category is therefore penalised twice. The missed gold category scores 0, and the predicted one, absent from the gold, also scores 0.
+
+\section{Data}
+
+Table~\ref{tab:data} summarises the SHROOM-Visions 2026 data. Answers are long (on average 3.9 gold spans per hallucinated answer) and the categories are very unbalanced: OCR, other and miscounting occur in 6\%, 9\% and 12\% of training answers, against 41--44\% for invention and mischaracterization. Answers repeat images. There are 12,082 training answers over 2,054 images, and 3,020 validation answers over 1,473 images, 1,451 of which also appear in train. Test labels are hidden. Test predictions are scored by the organisers' leaderboard.
+
+\begin{table}[!htb]
+    \centering
+    \caption{SHROOM-Visions 2026 data. ``Halluc.'' is the share of answers with at least one gold span; the category columns give the share of answers containing that category.}
+    \label{tab:data}
+    \begin{tabular}{lrrrrrrrr}
+    \toprule
+    Split & Answers & Images & Halluc. & Inv. & Mis. & OCR & Cnt. & Oth. \\
+    \midrule
+    Train & 12,082 & 2,054 & 71.6\% & 41.3\% & 44.3\% & 6.0\% & 12.3\% & 8.9\% \\
+    Validation & 3,020 & 1,473 & 71.6\% & 40.6\% & 45.0\% & 5.9\% & 11.9\% & 8.4\% \\
+    Test & 4,898 & -- & -- & -- & -- & -- & -- & -- \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+Each split has about the same number of answers per language: 2,989--3,070 per language in train, 729--780 in validation and 1,201--1,254 in test.
+
+\section{Objectives and hypotheses}
+
+The objective is a detector $f$ whose primary score is higher than that of the reference detector $f_0$, the best backbone fine-tuned on the original training data alone. ``Higher'' is meant in the pre-registered sense of Section~\ref{sec:protocol}: over three training seeds, on two disjoint validation halves, with a paired bootstrap. The final claim is then confirmed on the official test set.
+
+The thesis tests the following hypotheses, stated before the experiments in the thesis proposal:
+\begin{description}
+    \item[H1] At least one alternative VLM family differs from the reference backbone by more than the training-seed variance on validation Cor+Lbl, so the choice of backbone matters.
+    \item[H2] Tested in isolation, upsampling and synthetic injection have separately attributable effects on Cor+Lbl per category. In particular, heuristic injection is weaker for OCR than for other categories.
+    \item[H3] A retrieval-grounded construction that reuses real annotated hallucinations is (a) harder to tell from real spans and (b) less harmful, or more helpful, for OCR than heuristic injection.
+    \item[H4] The sampling-based and the learned-probe uncertainty detectors are not perfectly correlated in the category--language cells where they succeed, so they capture partly distinct evidence.
+\end{description}
+On top of these, the \emph{main hypothesis} is that combining the judge with the uncertainty components beats $f_0$ under the protocol.

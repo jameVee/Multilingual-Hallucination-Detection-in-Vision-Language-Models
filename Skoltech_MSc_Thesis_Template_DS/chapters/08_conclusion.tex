@@ -1,0 +1,56 @@
+\chapter{Discussion and conclusion}\label{chap:conclusion}
+
+\section{Summary of results}
+
+The thesis set out to build a span-level hallucination detector for multilingual VLM answers that beats a judge fine-tuned on the original data alone, and to show which component brings which part of the gain. The results, by part:
+
+\begin{itemize}
+    \item \textbf{Judge backbone (Part 1).} Qwen3-VL-8B is the best of four VLM families under one fixed recipe, by more than the seed variance (H1 supported). Two fixes in the existing pipeline are worth as much as a new method. A label-aware span decoder lifts the official test score of the same generations by 0.012. A feature-coverage leak had made an earlier uncertainty pipeline look strong on validation, through free perfect scores on clean records.
+    \item \textbf{Uncertainty and fusion (Part 3).} Three components improve the judge, each with an interpretable mechanism.
+    \begin{itemize}
+        \item The per-label self-consistency vote over the judge's samples improves span localisation.
+        \item The CRF probe on the frozen judge is weak alone, but adds a consistent gain as one voter.
+        \item Graded per-character probabilities improve the rank correlation with annotator agreement.
+    \end{itemize}
+    Together they reach Cor+Lbl 0.4296 on test against 0.4132 for the original-data judge (three-seed means). The gain holds for every seed and language, and on validation the final detector meets the pre-registered criterion on both halves.
+    \item \textbf{Synthetic data (Part 2).} Synthetic training data does not improve the judge, even when it is realistic by a classifier two-sample test. The clean/labeled decomposition shows that its gain on hallucinated answers comes from flagging more and is paid for by false alarms on clean answers. Matching the hallucinated share removes both. H2 holds for the conditions that were run, H3(a) holds and H3(b) shows no effect.
+    \item \textbf{Overlap of the two uncertainty signals (H4).} The voter and the probe succeed in the same category--language cells (H4 not supported at the cell level), but their record-level errors are only partly shared.
+\end{itemize}
+
+\section{Position in the research landscape}
+
+The best SHROOM-Visions systems used committees of several fine-tuned VLM judges~\cite{vroomvroom2026}. Our results suggest that much of the benefit of a committee is available from \emph{one} judge, by sampling it several times and voting per label. Our four-backbone committee scored below the single-judge vote. One caveat is that three of its members used the older decoder. The top system reported that internal-activation probes did not help its committee. We find that a probe does help a self-consistency vote, by a small margin, when it is trained with multi-label targets and decodes spans with a CRF. This fits the view that probes and generative judges make correlated but not identical errors: the record-level correlation is 0.76 in our case.
+
+For the text-only predecessor task, synthetic data was a central ingredient of strong systems~\cite{rykov-etal-2025-smurfcat,mo-etal-2025-team}. Our isolated tests do not contradict this for settings with little annotated data. They show, however, that with 12k annotated multimodal answers the main effect of adding hallucinated examples is a shift of the model's prior, and that the label-dependent metric punishes this through false alarms on clean answers. A fair evaluation of synthetic data for this task must therefore control the hallucinated share and the number of training steps. Without these controls, gains on hallucinated records can look like progress while the overall score stays flat.
+
+Methodologically, the program shows that validation reuse can be limited in practice without slowing the work much. The decision log contains eight decisions and 25 candidate evaluations. Several results that looked promising on val\_select did not confirm on val\_confirm, including the first single-label vote and, by the strict criterion, F2 and F3 alone. The test results then agreed with the order seen on validation.
+
+\section{Comparative analysis}
+
+Compared with our shared-task entry, the final detector gains $+0.032$ Cor+Lbl on test. About half comes from engineering of the base pipeline: the reimplementation and the decoder fix. The other half comes from the uncertainty components. On the official ranking it would move from 8th, 6th, 7th and 5th to 5th, 5th, 5th and 3rd in English, French, Italian and Chinese. The remaining gap to the top teams is largest in Cor. In English, our Cor is 0.455 against 0.553 for the winner, while our IoU (0.405) is 0.08 behind its 0.487. This points to calibration of per-character probabilities, rather than span finding, as the most promising direction. The graded output already moved Cor by 0.014 without changing any span.
+
+\section{Limitations}
+
+\begin{itemize}
+    \item \textbf{One task, one dataset.} All conclusions are drawn on SHROOM-Visions 2026. The answers were written by humans to look like VLM output~\cite{mickus2026humansdreamelectricsheep}, so the error distribution of a deployed VLM may differ.
+    \item \textbf{Strength of the confirmation.} The final detector meets the strict criterion only after the graded-probability step, which was decided after the main integration decision. It is reported as a post-hoc extension. Its candidates were registered before scoring, and its test gain agrees with validation, but it was not part of the original plan. The earlier systems F2 and F3 improve on test and on val\_select, but their val\_confirm gains are not significant on their own.
+    \item \textbf{Compute.} All experiments use one 24\,GB GPU. Backbones were limited to 8--12B parameters in 4-bit, Pixtral needed a reduced image resolution, and the backbone comparison used one seed per backbone.
+    \item \textbf{Single judge for the probe.} The probe reads the same backbone as the judge. A second frozen judge from another family (Gemma-3-12B) was pre-registered as a way to reduce correlated errors, but was not run within the time available.
+    \item \textbf{Scope of Part 2.} Synthetic data was tested at one dose per condition and with seed-42 screening. LLM-written injections were never trained, because the gating rule did not fire. Small effects within seed noise cannot be excluded. The negative result means ``no detectable effect at this dose and data size''.
+    \item \textbf{Inference cost.} The final detector needs nine decodes of the judge and one forward pass of the frozen model per answer. That is roughly ten times the cost of the greedy judge.
+\end{itemize}
+
+\section{Future work}
+
+\begin{itemize}
+    \item \textbf{Calibration.} Learn the mapping from votes and judge probabilities to per-character probabilities directly against annotator agreement, for example by isotonic regression on train, rather than using the mean.
+    \item \textbf{Diverse probe judges.} Read the probe from a judge of a different model family, as pre-registered, to test whether less correlated errors make the probe more useful.
+    \item \textbf{Cheaper inference.} Distil the committee of decodes into the judge, so that one decode carries the consistency signal.
+    \item \textbf{Synthetic data with matched priors and long training.} Revisit synthetic data with the hallucinated share matched and real-data exposure held fixed, for example by first training on synthetic data and then on the original recipe, the one clean Part~2 design that remains untested.
+\end{itemize}
+
+\newpage
+\chapter*{Acknowledgements}
+\addcontentsline{toc}{chapter}{Acknowledgements}
+I thank my supervisor Alexander Panchenko and co-supervisor Elisei Rykov for their guidance throughout this work and on our shared-task system. I thank the SHROOM-Visions 2026 organisers for the data, the scorer and the leaderboard, and the Skoltech NLP group for access to the GPU server on which the experiments were run.
+% TODO: add funding acknowledgements if applicable.

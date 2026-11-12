@@ -1,0 +1,54 @@
+\chapter{Introduction}
+
+Vision-language models (VLMs) answer questions about images, write captions and read text in photographs, and they are increasingly deployed in assistive and search applications. Their answers are fluent, but they are not always faithful to the image. A model may describe an object that is not there, give a visible object the wrong colour, misread a sign, or report the wrong number of people. These errors are called \emph{hallucinations}~\cite{ji2023survey,rohrbach2018object}. They are hard to notice for exactly the reason that makes VLMs useful: the text reads well, and the reader usually cannot check every claim against the image.
+
+Most work on hallucination evaluates whole answers. It asks, for example, whether an object mentioned in a caption appears in the image~\cite{rohrbach2018object,li2023pope}. For a user, an editor or a downstream system, a yes/no verdict is not enough. They need to know \emph{which words} are unsupported and \emph{what kind} of error each one is, because different errors call for different fixes: a misread sign points to the OCR ability of the model, a miscount to its counting. The SemEval-2025 Mu-SHROOM task framed this as span detection for text-only LLMs in many languages~\cite{vazquez-etal-2025-semeval}. SHROOM-Visions 2026 extended it to images~\cite{vazquez2026shroomvisionsoverview,mickus2026humansdreamelectricsheep}. Given an image, a question and a VLM answer in English, French, Italian or Chinese, a system marks every hallucinated character span, gives it one of five categories, and attaches a probability. The gold probability of a character is the share of annotators who marked it, so the task asks for calibrated, fine-grained output rather than a single verdict.
+
+\paragraph{Main ideas of existing methods.}
+Methods for detecting hallucinations fall into three families.
+\begin{enumerate}
+    \item \textbf{Supervised detectors.} A model is fine-tuned to label hallucinations, usually with parameter-efficient methods such as LoRA and QLoRA~\cite{hu2022lora,dettmers2023qlora}. Synthetic training data is often added because annotated data is scarce~\cite{zhang2024perturbation,xie2024controlled,rykov-etal-2025-smurfcat}. In SHROOM-Visions, the strongest systems were fine-tuned VLM judges, and the top system combined several of them in a committee~\cite{vroomvroom2026}.
+    \item \textbf{Black-box consistency checks.} SelfCheckGPT~\cite{manakul2023selfcheckgpt} and semantic entropy~\cite{farquhar2024semantic,kuhn2023semantic} sample several answers and treat disagreement between them as a sign of hallucination. They need no access to model internals.
+    \item \textbf{White-box probes.} These read the internal state of a frozen model, for example hidden-state geometry~\cite{chen2024inside}, the share of attention paid to the context~\cite{chuang2024lookback}, or layer-wise information~\cite{kim2025layerwise}. Recent work decodes spans from such signals with a conditional random field (CRF) rather than thresholding each token~\cite{itkin2026temporal}.
+\end{enumerate}
+
+\paragraph{Pros and cons of the state of the art.}
+Fine-tuned judges are the most accurate, but they output one decode with a probability that the model itself writes as text, and that number carries little information. Consistency checks give a natural uncertainty signal, but they were designed for answer-level verdicts, not for labelled character spans. Probes are cheap at inference time, but on their own they are much weaker than a fine-tuned judge, and the top SHROOM-Visions system found that its probes did not improve its committee~\cite{vroomvroom2026}. Synthetic data is widely used, but its effect is rarely isolated: in our own shared-task entry~\cite{rattanajaratkul2026smurfcat}, upsampling and two kinds of synthetic injection were combined in one training set, and several gains seen on validation did not hold on test. Finally, systems in shared tasks are usually tuned on the same validation set many times. This is a known way to overstate results~\cite{dwork2015reusable}, and it makes it hard to say which component actually helped.
+
+\paragraph{Relevance.}
+VLMs are deployed faster than tools to audit them. A detector that marks hallucinated spans with a category and a calibrated probability can flag answers for review, give feedback signals for training, and measure how often and how a model hallucinates. The setting is also scientifically useful: it lets one compare supervised, consistency-based and internal-state signals on the same data with the same official metrics, in four languages including one with a non-Latin script.
+
+\paragraph{Main purpose of the research.}
+The purpose of this thesis is to build a span-level hallucination detector for multilingual VLM outputs that beats a strong supervised baseline, the same judge fine-tuned on the original data alone, and to show which component brings each part of the gain. The work has three parts, each isolated against that baseline:
+\begin{enumerate}
+    \item \textbf{Judge backbone.} Choose the backbone of the judge from four VLM families under one fixed recipe.
+    \item \textbf{Synthetic training data.} Test, condition by condition, whether synthetic training data improves the judge.
+    \item \textbf{Uncertainty.} Test whether two uncertainty mechanisms, a training-free self-consistency vote and a learned CRF probe on the frozen judge, improve its output, alone and combined.
+\end{enumerate}
+The final detector combines the components that survived these tests.
+
+\paragraph{Scientific novelty.}
+\begin{enumerate}
+    \item \textbf{Span-level, per-label self-consistency.} A voting scheme for span-level, multi-label hallucination detection. Sampled decodes of a fine-tuned generative judge are combined per character and per label, so that text that annotators gave two labels can keep both. The vote fraction is kept as a graded per-character probability, which directly targets the rank-correlation metric.
+    \item \textbf{A white-box probe as a voter.} A CRF probe on frozen-judge internals (entropy, likelihood, look-back ratio, hidden state), trained with multi-label targets, is used as one voter next to the sampled decodes. Weak on its own (Cor+Lbl 0.384 against 0.429 for the judge), it adds a small but consistent gain in the committee, while the top system of the task found no gain from probes~\cite{vroomvroom2026}.
+    \item \textbf{A diagnosed negative result for synthetic data.} Synthetic and upsampled data were tested in isolation, including a new retrieval-grounded construction that transplants real annotated hallucinations between answers about the same image and passes a classifier two-sample test. A decomposition of the metric into clean and labeled records shows why it does not help: the gain on hallucinated answers is cancelled by false alarms caused by the shifted share of hallucinated training examples.
+    \item \textbf{Two decoding problems that cap the metric.} Two problems in the standard pipeline are identified and fixed. A span decoder that drops overlapping spans with different labels caps the metric at 0.925 even for perfect model output. A feature-coverage leak gave 28\% of validation records a free perfect score in an earlier uncertainty pipeline.
+    \item \textbf{A pre-registered protocol.} All results come from a protocol that limits validation reuse. Validation is split into a selection half and a confirmation half grouped by image. Each decision compares at most five candidates and is logged, and claims need three seeds and a paired bootstrap.
+\end{enumerate}
+
+\paragraph{Statements for defense.}
+\begin{enumerate}
+    \item \textbf{The detector beats the baseline.} A detector that combines a QLoRA-fine-tuned VLM judge, a per-label self-consistency vote over sampled decodes, a CRF uncertainty probe as an additional voter and graded per-character probabilities outperforms the same judge fine-tuned on the original data alone. On the official test set it reaches Cor+Lbl 0.4296 against 0.4132 (three-seed means). The gain holds for every seed and every language. On validation it meets the pre-registered criterion on both halves (confirmation half: $+0.0086$, 95\% CI $[+0.0027, +0.0148]$).
+    \item \textbf{Where the gain comes from.} The vote improves span localisation (IoU $+0.018$ on test). The graded probabilities improve the rank correlation with annotator agreement (Cor $+0.014$), and they are what makes the gain significant on the confirmation half.
+    \item \textbf{Synthetic data does not help at this data size.} Synthetic and upsampled training data, constructed realistically and tested in isolation, does not improve a judge fine-tuned on 12k annotated examples. Its gain on hallucinated answers is cancelled by false alarms on clean answers, caused by the shift in the share of hallucinated training examples. Matching that share removes both effects.
+    \item \textbf{The probe overlaps with the voter but still helps.} The training-free voter and the learned probe succeed and fail on the same categories and languages (Spearman 0.95 over 20 category--language cells). Their record-level errors overlap only partly (Pearson 0.76), which is enough for the probe to add a consistent gain when it votes.
+\end{enumerate}
+
+\paragraph{Structure of the thesis.}
+\begin{itemize}
+    \item Chapter~\ref{chap:lit} reviews related work.
+    \item Chapter~\ref{chap:problem} defines the task, the metrics and the hypotheses.
+    \item Chapter~\ref{chap:methods} describes the architecture of the detector, the synthetic-data constructions and the evaluation protocol.
+    \item Chapter~\ref{chap:experiments} reports the experiments.
+    \item Chapter~\ref{chap:conclusion} discusses the results and their limitations.
+\end{itemize}

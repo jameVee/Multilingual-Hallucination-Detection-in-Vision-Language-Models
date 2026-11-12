@@ -1,0 +1,15 @@
+\chapter{Author contribution}
+
+The author designed and implemented the work in this thesis and ran all experiments. In particular, the author:
+\begin{itemize}
+    \item \textbf{Shared-task entry.} Built and submitted the team's system for the SHROOM-Visions 2026 shared task: QLoRA fine-tuning of Qwen3-VL-8B with upsampled and synthetic training data, described in the system paper~\cite{rattanajaratkul2026smurfcat}.
+    \item \textbf{Evaluation protocol.} Designed the three-part experimental program and its reliability protocol: the image-grouped validation split, the per-decision candidate budget, the pre-registered rules and the three-seed paired-bootstrap criterion.
+    \item \textbf{Training and inference.} Wrote the training and inference code for four VLM backbones: Qwen3-VL-8B, Gemma-3-12B, InternVL3-8B and Pixtral-12B.
+    \item \textbf{Pipeline fixes.} Found and fixed the dual-label span-decoding problem and the feature-coverage leak in the earlier uncertainty pipeline.
+    \item \textbf{Synthetic data.} Built the synthetic-data conditions (rarity upsampling, a new retrieval-grounded transplant method, prior-matched variants) together with the realism checks and the classifier two-sample test.
+    \item \textbf{Detector components.} Implemented the per-label self-consistency voter with graded probabilities, the feature extraction from the frozen judge, and the multi-label BiGRU--CRF probe.
+    \item \textbf{Experiments.} Ran the experiments on a shared server with RTX~3090 GPUs and carried out all analyses.
+\end{itemize}
+
+Alexander Panchenko (supervisor) and Elisei Rykov (co-supervisor) advised on the direction of the work and on the shared-task system, and co-authored the system description paper. The shared-task data, the official scorer and the leaderboard are provided by the SHROOM-Visions organisers~\cite{vazquez2026shroomvisionsoverview}.
+% TODO: adjust the description of the supervisors' roles if needed.
