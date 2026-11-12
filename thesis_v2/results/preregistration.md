@@ -231,3 +231,26 @@ bootstrap.
   Its IoU is +0.0120 higher and its Cor is -0.0010 lower. The thesis reports this as
   a consistent gain on two of three evaluations, with confirmation inconclusive on
   val_confirm (half of val, 1,510 records). The bar is not relaxed afterwards.
+
+**Outcome, C1-b and D2c_R4 (2026-11-12): not promoted, so Part 2 ends.** C1-b's val_select
+is 0.4213, -0.0097 vs dec2 C0 (CI [-0.0201, +0.0010]). It ran exactly 3,020 optimizer
+steps (checked). D2c_R4 (candidates C4x-b, C1-b) is logged with chosen = none.
+
+| val_select | Cor+Lbl | Labeled-record part | Clean-record part | Records flagged | Clean records flagged |
+|---|---|---|---|---|---|
+| C0 | 0.4310 | 0.1536 | 0.2774 | 575 | 22 |
+| C1 | 0.4315 | -- | -- | -- | -- |
+| C1-b | 0.4213 | -0.0118 | +0.0021 | 507 | 19 |
+
+- C1-b's training set is 23,682 records (1.02 passes at 3,020 steps). Counting each copy
+  as a separate exposure, it sees as many hallucinated and clean records as C0
+  (about 17,290 and 6,870). What changes is where the hallucinated exposures go: the
+  rare-category records upsampled by C1 take them from the common-category records,
+  which C0 sees twice and C1-b about once.
+- The result is under-flagging: 507 records flagged against 575. The labeled part loses
+  -0.0118 and the clean part gains only +0.0021. At fixed compute, rarity upsampling
+  costs more on common categories than it gains on rare ones. C1's earlier +0.0004 came
+  from the extra steps, not from the redistribution.
+- **Part 2 conclusion.** Five conditions, C1, C4, C4x, C4x-b and C1-b, failed to beat C0
+  under the parser fix and the prior match. No synthetic or upsampled condition beats
+  fine-tuning on the original data alone at this dose. Per R4, no further revision follows.
