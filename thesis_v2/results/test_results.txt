@@ -86,3 +86,32 @@ Cor+Lbl	0.4232 (0.0038)	vs C0 0.4132 (0.0034): per-seed gains +0.0048 / +0.0131 
                 	vs F2 (3a v2) 0.4195: per-seed gains +0.0026 / +0.0053 / +0.0032, mean +0.0037
 Cor	0.4869 (0.0033)	vs C0 0.4871, F2 0.4861
 IoU	0.4515 (0.0036)	vs C0 0.4335 (+0.0180), F2 0.4455 (+0.0060)
+
+## G1 (D6_graded, R6 post-hoc): F3 with graded per-character probabilities -- seed 42 (submitted 2026-11-12)
+EN	0.3901	0.4486	0.3991
+FR	0.4190	0.4948	0.4499
+IT	0.4185	0.5041	0.4464
+ZH	0.4844	0.5536	0.5086
+mean	0.4280	0.5003	0.4510
+
+## G1 seed 123 (submitted 2026-11-12)
+EN	0.3920	0.4593	0.4083
+FR	0.4237	0.4878	0.4486
+IT	0.4286	0.5062	0.4512
+ZH	0.4870	0.5595	0.5132
+mean	0.4328	0.5032	0.4553
+
+## G1 seed 2024 (submitted 2026-11-12)
+EN	0.3898	0.4567	0.4075
+FR	0.4186	0.4843	0.4370
+IT	0.4240	0.5016	0.4446
+ZH	0.4793	0.5531	0.5038
+mean	0.4279	0.4989	0.4482
+
+## G1, 3 seeds: mean (std); IoU identical to F3 by construction (checked: equal on every seed)
+Cor+Lbl	0.4296 (0.0028)	vs C0 0.4132: per-seed +0.0122 / +0.0183 / +0.0185, mean +0.0163
+                	vs F3 0.4232: per-seed +0.0074 / +0.0052 / +0.0064, mean +0.0064
+Cor	0.5008 (0.0022)	vs C0 0.4871 (+0.0137), F3 0.4869 (+0.0139)
+IoU	0.4515 (0.0036)	vs C0 0.4335 (+0.0180)
+per language (3-seed mean Cor+Lbl): EN 0.3906  FR 0.4204  IT 0.4237  ZH 0.4836
+leaderboard placement (Cor+Lbl, official ranking file): EN 5th, FR 5th, IT 5th, ZH 3rd (team entry SmurfCat was 8th / 6th / 7th / 5th)
