@@ -312,3 +312,32 @@ record for record on all three seeds (checked before D4 was logged).
   and below F2 and F3. It is reported separately, as planned.
 - Test files for F3, one per seed (format-checked), are in
   `runs/integration/final/submission_F3_seed{42,123,2024}/`, for the user to submit.
+
+## R6: graded per-character probabilities (post-hoc extension, 2026-11-12, written before any score)
+
+**Why.** Cor and Cor+Lbl are a Spearman correlation between per-character predicted
+and gold probabilities. Gold probability is the share of annotators who marked a
+character, so it varies inside a span (core vs edges). All our voting outputs average
+prob over each span (`voting.py`), so every character of a span gets the same value.
+The scorer sees ties and the within-span ranking is lost. F3's test gain came almost
+entirely from IoU (+0.018) while Cor stayed flat, and Cor is where we trail the top
+teams (EN Cor 0.44 vs 0.55). This extension is decided after D4 and is reported as
+post-hoc.
+
+**Candidates (3; same voters, same per-label vote and k=3 as F3, so the kept characters
+and IoU are identical. Only the prob values change):**
+- G0: F3 as is. Span prob = mean over the span of prob_L(c) = (1/N) sum_i flag_i(c, L) prob_i(c, L).
+- G1: graded F3. prob_L(c) is kept per character, rounded to 2 decimals, and consecutive
+  characters with equal rounded prob form one output span.
+- G2: graded vote fraction. prob_L(c) = votes_L(c) / N (N = 10 voters), likewise per
+  character.
+
+**Rule.**
+- Decision D6_graded picks the highest mean val_select Cor+Lbl over the 3 F3 seeds and is
+  logged once.
+- A claim that the chosen variant improves on F3 uses the 3-seed "beats baseline" rule
+  with F3 as the baseline (F3 seed std 0.0032), on both val halves.
+- If G1 or G2 is chosen, its 3 test files are written for the user. Otherwise nothing is
+  submitted.
+- No further variants (other rounding, temperature, or calibration) follow from this
+  result.
