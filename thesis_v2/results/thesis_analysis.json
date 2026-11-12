@@ -1,0 +1,1256 @@
+{
+ "dataset": {
+  "train": {
+   "n": 12082,
+   "per_language": {
+    "zh": 3010,
+    "it": 2989,
+    "fr": 3013,
+    "en": 3070
+   },
+   "with_hallucination": 8646,
+   "label_record_share": {
+    "invention": 0.4129,
+    "mischaracterization": 0.4428,
+    "OCR": 0.0604,
+    "miscounting": 0.1228,
+    "other": 0.0894
+   },
+   "mean_spans_per_labeled_record": 3.89,
+   "images": 2054
+  },
+  "val": {
+   "n": 3020,
+   "per_language": {
+    "en": 729,
+    "it": 757,
+    "zh": 780,
+    "fr": 754
+   },
+   "with_hallucination": 2161,
+   "label_record_share": {
+    "invention": 0.4056,
+    "mischaracterization": 0.4497,
+    "OCR": 0.0593,
+    "miscounting": 0.1189,
+    "other": 0.0844
+   },
+   "mean_spans_per_labeled_record": 3.89,
+   "images": 1473
+  },
+  "test": {
+   "n": 4898,
+   "per_language": {
+    "en": 1201,
+    "fr": 1233,
+    "it": 1254,
+    "zh": 1210
+   }
+  },
+  "val_select": 1515,
+  "val_confirm": 1505
+ },
+ "ablation": {
+  "C0 greedy": {
+   "val_select": {
+    "seeds": [
+     42,
+     123,
+     2024
+    ],
+    "cor_lbl": 0.42876672822456924,
+    "cor_lbl_std": 0.002342371184260469,
+    "cor": 0.4755714865744851,
+    "iou": 0.4435451422864394,
+    "per_language_cor_lbl": {
+     "en": 0.38464336917612757,
+     "fr": 0.4376600888075228,
+     "it": 0.3961677599482433,
+     "zh": 0.4965956949663832
+    }
+   },
+   "val_confirm": {
+    "seeds": [
+     42,
+     123,
+     2024
+    ],
+    "cor_lbl": 0.4224440584566705,
+    "cor_lbl_std": 0.0025338306686976367,
+    "cor": 0.4786852605803735,
+    "iou": 0.4469064342258309,
+    "per_language_cor_lbl": {
+     "en": 0.37671956068179174,
+     "fr": 0.3717852401771394,
+     "it": 0.45095138658257156,
+     "zh": 0.4903200463851791
+    }
+   }
+  },
+  "3a v1 (single-label, samples only)": {
+   "val_select": {
+    "seeds": [
+     42
+    ],
+    "cor_lbl": 0.4331183768729188,
+    "cor_lbl_std": null,
+    "cor": 0.4887312452684429,
+    "iou": 0.4584387335426068,
+    "per_language_cor_lbl": {
+     "en": 0.38323925137180775,
+     "fr": 0.43186677523199535,
+     "it": 0.414756876863678,
+     "zh": 0.5026106040241942
+    }
+   },
+   "val_confirm": {
+    "seeds": [
+     42
+    ],
+    "cor_lbl": 0.4140089266478426,
+    "cor_lbl_std": null,
+    "cor": 0.48238111721670257,
+    "iou": 0.4549185574593,
+    "per_language_cor_lbl": {
+     "en": 0.3753285426857085,
+     "fr": 0.36466714770893743,
+     "it": 0.4290098111718982,
+     "zh": 0.4870302050248264
+    }
+   }
+  },
+  "3b v2 probe alone": {
+   "val_select": {
+    "seeds": [
+     42,
+     123,
+     2024
+    ],
+    "cor_lbl": 0.3843816055428462,
+    "cor_lbl_std": 0.007371808075067958,
+    "cor": 0.41573795543408815,
+    "iou": 0.4093883849951934,
+    "per_language_cor_lbl": {
+     "en": 0.3338097986352287,
+     "fr": 0.3880182234857952,
+     "it": 0.34729218034919823,
+     "zh": 0.4684062197011631
+    }
+   },
+   "val_confirm": {
+    "seeds": [
+     42,
+     123,
+     2024
+    ],
+    "cor_lbl": 0.36249876156521754,
+    "cor_lbl_std": 0.0037509410433192608,
+    "cor": 0.4016844558358661,
+    "iou": 0.39682211303305,
+    "per_language_cor_lbl": {
+     "en": 0.2944781488042087,
+     "fr": 0.33169421741754546,
+     "it": 0.3789332514311467,
+     "zh": 0.4448894286079694
+    }
+   }
+  },
+  "F2 = 3a v2": {
+   "val_select": {
+    "seeds": [
+     42,
+     123,
+     2024
+    ],
+    "cor_lbl": 0.4366827913291927,
+    "cor_lbl_std": 0.003247010809217127,
+    "cor": 0.481816377534317,
+    "iou": 0.4554841318090985,
+    "per_language_cor_lbl": {
+     "en": 0.3900718751469763,
+     "fr": 0.4398109255189009,
+     "it": 0.4172230767266922,
+     "zh": 0.49962528792420163
+    }
+   },
+   "val_confirm": {
+    "seeds": [
+     42,
+     123,
+     2024
+    ],
+    "cor_lbl": 0.4244028587621734,
+    "cor_lbl_std": 0.0023986899220600558,
+    "cor": 0.47303835302933006,
+    "iou": 0.4522316539418803,
+    "per_language_cor_lbl": {
+     "en": 0.3876916051628047,
+     "fr": 0.3685955671870607,
+     "it": 0.4481347620389613,
+     "zh": 0.49318950065986683
+    }
+   }
+  },
+  "F3 = F2 + probe voter": {
+   "val_select": {
+    "seeds": [
+     42,
+     123,
+     2024
+    ],
+    "cor_lbl": 0.4403729056208497,
+    "cor_lbl_std": 0.003195745805913732,
+    "cor": 0.4859695977741823,
+    "iou": 0.46085861619171137,
+    "per_language_cor_lbl": {
+     "en": 0.3936475488378531,
+     "fr": 0.44698179287450085,
+     "it": 0.4203590447974313,
+     "zh": 0.5005032359736138
+    }
+   },
+   "val_confirm": {
+    "seeds": [
+     42,
+     123,
+     2024
+    ],
+    "cor_lbl": 0.42531104557392396,
+    "cor_lbl_std": 0.002482642756819202,
+    "cor": 0.47380006360034205,
+    "iou": 0.4552036113143416,
+    "per_language_cor_lbl": {
+     "en": 0.38998124929196626,
+     "fr": 0.37278623027757263,
+     "it": 0.4479094089436961,
+     "zh": 0.490567293782461
+    }
+   }
+  },
+  "G1 = F3 + graded prob": {
+   "val_select": {
+    "seeds": [
+     42,
+     123,
+     2024
+    ],
+    "cor_lbl": 0.44328224373939373,
+    "cor_lbl_std": 0.0031243744002262164,
+    "cor": 0.4917253038798551,
+    "iou": 0.46085861619171137,
+    "per_language_cor_lbl": {
+     "en": 0.3967071318894971,
+     "fr": 0.4498443445302338,
+     "it": 0.4211321702899174,
+     "zh": 0.5054453282479265
+    }
+   },
+   "val_confirm": {
+    "seeds": [
+     42,
+     123,
+     2024
+    ],
+    "cor_lbl": 0.43104759609109417,
+    "cor_lbl_std": 0.0031005533125858676,
+    "cor": 0.4856345938560398,
+    "iou": 0.4552036113143416,
+    "per_language_cor_lbl": {
+     "en": 0.39586492172242416,
+     "fr": 0.3805764213973504,
+     "it": 0.4532826161269033,
+     "zh": 0.4944664251176989
+    }
+   }
+  }
+ },
+ "per_label": {
+  "C0 greedy": {
+   "val_select": [
+    {
+     "invention": {
+      "iou": 0.1860987614163166,
+      "cor": 0.20868215950029123,
+      "n_records_with_label": 671
+     },
+     "mischaracterization": {
+      "iou": 0.1265579070352001,
+      "cor": 0.1554001038243362,
+      "n_records_with_label": 752
+     },
+     "OCR": {
+      "iou": 0.3072977804180109,
+      "cor": 0.33576900228683626,
+      "n_records_with_label": 86
+     },
+     "miscounting": {
+      "iou": 0.3752827432685878,
+      "cor": 0.4254550655709074,
+      "n_records_with_label": 198
+     },
+     "other": {
+      "iou": 0.03984984984984985,
+      "cor": 0.04241508801195757,
+      "n_records_with_label": 148
+     }
+    },
+    {
+     "invention": {
+      "iou": 0.181494019856852,
+      "cor": 0.21021944039586865,
+      "n_records_with_label": 671
+     },
+     "mischaracterization": {
+      "iou": 0.11727684149636124,
+      "cor": 0.14564382594773545,
+      "n_records_with_label": 752
+     },
+     "OCR": {
+      "iou": 0.3431866867468179,
+      "cor": 0.37197556856751995,
+      "n_records_with_label": 89
+     },
+     "miscounting": {
+      "iou": 0.3936392821713895,
+      "cor": 0.4402915048324087,
+      "n_records_with_label": 199
+     },
+     "other": {
+      "iou": 0.0313415701285904,
+      "cor": 0.040328214318952005,
+      "n_records_with_label": 159
+     }
+    },
+    {
+     "invention": {
+      "iou": 0.18155538429682141,
+      "cor": 0.20745500271556683,
+      "n_records_with_label": 659
+     },
+     "mischaracterization": {
+      "iou": 0.12314392482634276,
+      "cor": 0.152405172573601,
+      "n_records_with_label": 760
+     },
+     "OCR": {
+      "iou": 0.28915249896254797,
+      "cor": 0.3151146548660751,
+      "n_records_with_label": 90
+     },
+     "miscounting": {
+      "iou": 0.38798252472856837,
+      "cor": 0.4343479896871535,
+      "n_records_with_label": 197
+     },
+     "other": {
+      "iou": 0.03705933507258011,
+      "cor": 0.038617801105656484,
+      "n_records_with_label": 151
+     }
+    }
+   ],
+   "val_confirm": [
+    {
+     "invention": {
+      "iou": 0.2130024656426484,
+      "cor": 0.23275524876686962,
+      "n_records_with_label": 668
+     },
+     "mischaracterization": {
+      "iou": 0.11096417677350089,
+      "cor": 0.1326757466916413,
+      "n_records_with_label": 753
+     },
+     "OCR": {
+      "iou": 0.4273794402261779,
+      "cor": 0.45484442016586674,
+      "n_records_with_label": 123
+     },
+     "miscounting": {
+      "iou": 0.3288714361761751,
+      "cor": 0.3720604557168728,
+      "n_records_with_label": 206
+     },
+     "other": {
+      "iou": 0.048525263253039276,
+      "cor": 0.05269398882940083,
+      "n_records_with_label": 145
+     }
+    },
+    {
+     "invention": {
+      "iou": 0.1953728876242022,
+      "cor": 0.22009249451362248,
+      "n_records_with_label": 649
+     },
+     "mischaracterization": {
+      "iou": 0.12421717944152479,
+      "cor": 0.14708468196719435,
+      "n_records_with_label": 745
+     },
+     "OCR": {
+      "iou": 0.4028402153342584,
+      "cor": 0.4279407944841446,
+      "n_records_with_label": 136
+     },
+     "miscounting": {
+      "iou": 0.3447345007536486,
+      "cor": 0.3904225553278132,
+      "n_records_with_label": 203
+     },
+     "other": {
+      "iou": 0.05652338091612147,
+      "cor": 0.06340685420848921,
+      "n_records_with_label": 145
+     }
+    },
+    {
+     "invention": {
+      "iou": 0.19291151856440816,
+      "cor": 0.21654371937607214,
+      "n_records_with_label": 652
+     },
+     "mischaracterization": {
+      "iou": 0.12320698271126673,
+      "cor": 0.14821809717410175,
+      "n_records_with_label": 765
+     },
+     "OCR": {
+      "iou": 0.4206952256454523,
+      "cor": 0.45832891484260013,
+      "n_records_with_label": 131
+     },
+     "miscounting": {
+      "iou": 0.3254684625466585,
+      "cor": 0.3646838751843499,
+      "n_records_with_label": 201
+     },
+     "other": {
+      "iou": 0.031222087641422615,
+      "cor": 0.03579615466586359,
+      "n_records_with_label": 140
+     }
+    }
+   ]
+  },
+  "3a v1 (single-label, samples only)": {
+   "val_select": {
+    "invention": {
+     "iou": 0.1990673040176479,
+     "cor": 0.2156922683039351,
+     "n_records_with_label": 704
+    },
+    "mischaracterization": {
+     "iou": 0.10091631739399386,
+     "cor": 0.13235050625495812,
+     "n_records_with_label": 724
+    },
+    "OCR": {
+     "iou": 0.26957261801099563,
+     "cor": 0.2865242572734301,
+     "n_records_with_label": 79
+    },
+    "miscounting": {
+     "iou": 0.401221130227819,
+     "cor": 0.4547183999414512,
+     "n_records_with_label": 197
+    },
+    "other": {
+     "iou": 0.07020059752454119,
+     "cor": 0.07063986564890425,
+     "n_records_with_label": 142
+    }
+   },
+   "val_confirm": {
+    "invention": {
+     "iou": 0.21324872095255507,
+     "cor": 0.2235864358615788,
+     "n_records_with_label": 679
+    },
+    "mischaracterization": {
+     "iou": 0.09775333963598504,
+     "cor": 0.12068717814306805,
+     "n_records_with_label": 733
+    },
+    "OCR": {
+     "iou": 0.38928412016011527,
+     "cor": 0.4133687619350078,
+     "n_records_with_label": 121
+    },
+    "miscounting": {
+     "iou": 0.33514223556294337,
+     "cor": 0.37883325936059925,
+     "n_records_with_label": 198
+    },
+    "other": {
+     "iou": 0.0589222578397384,
+     "cor": 0.06578089211907144,
+     "n_records_with_label": 142
+    }
+   }
+  },
+  "3b v2 probe alone": {
+   "val_select": [
+    {
+     "invention": {
+      "iou": 0.12728116984097046,
+      "cor": 0.13487411696781174,
+      "n_records_with_label": 653
+     },
+     "mischaracterization": {
+      "iou": 0.06838956407909169,
+      "cor": 0.0805355988228945,
+      "n_records_with_label": 707
+     },
+     "OCR": {
+      "iou": 0.2625765181320737,
+      "cor": 0.29137203157839936,
+      "n_records_with_label": 81
+     },
+     "miscounting": {
+      "iou": 0.3262067880627395,
+      "cor": 0.3870213178734536,
+      "n_records_with_label": 202
+     },
+     "other": {
+      "iou": 0.07490993117953897,
+      "cor": 0.059980785893300456,
+      "n_records_with_label": 161
+     }
+    },
+    {
+     "invention": {
+      "iou": 0.2020044856224276,
+      "cor": 0.18918570200646426,
+      "n_records_with_label": 704
+     },
+     "mischaracterization": {
+      "iou": 0.07510231289197848,
+      "cor": 0.08937671538453663,
+      "n_records_with_label": 713
+     },
+     "OCR": {
+      "iou": 0.27108304954145923,
+      "cor": 0.29882047426467445,
+      "n_records_with_label": 89
+     },
+     "miscounting": {
+      "iou": 0.34450860556583596,
+      "cor": 0.39990501624924707,
+      "n_records_with_label": 204
+     },
+     "other": {
+      "iou": 0.07772512205076998,
+      "cor": 0.06045954386726189,
+      "n_records_with_label": 154
+     }
+    },
+    {
+     "invention": {
+      "iou": 0.18398014090285475,
+      "cor": 0.17596102873876274,
+      "n_records_with_label": 688
+     },
+     "mischaracterization": {
+      "iou": 0.061457408434639746,
+      "cor": 0.07524066548895474,
+      "n_records_with_label": 707
+     },
+     "OCR": {
+      "iou": 0.24834901432666215,
+      "cor": 0.28871316546571923,
+      "n_records_with_label": 95
+     },
+     "miscounting": {
+      "iou": 0.32330941827520615,
+      "cor": 0.3811780525002074,
+      "n_records_with_label": 204
+     },
+     "other": {
+      "iou": 0.0782185803579587,
+      "cor": 0.052344109988517976,
+      "n_records_with_label": 140
+     }
+    }
+   ],
+   "val_confirm": [
+    {
+     "invention": {
+      "iou": 0.13318206999594312,
+      "cor": 0.13241703508311897,
+      "n_records_with_label": 636
+     },
+     "mischaracterization": {
+      "iou": 0.06678233412990542,
+      "cor": 0.08375891387406977,
+      "n_records_with_label": 714
+     },
+     "OCR": {
+      "iou": 0.3282191042558357,
+      "cor": 0.35870262983398193,
+      "n_records_with_label": 121
+     },
+     "miscounting": {
+      "iou": 0.2779888197936007,
+      "cor": 0.33549284729304346,
+      "n_records_with_label": 199
+     },
+     "other": {
+      "iou": 0.05708105301492384,
+      "cor": 0.038361849987312915,
+      "n_records_with_label": 157
+     }
+    },
+    {
+     "invention": {
+      "iou": 0.19024935247836255,
+      "cor": 0.16671710205262605,
+      "n_records_with_label": 698
+     },
+     "mischaracterization": {
+      "iou": 0.077414028418732,
+      "cor": 0.09060481065428415,
+      "n_records_with_label": 711
+     },
+     "OCR": {
+      "iou": 0.34691636602799364,
+      "cor": 0.36948590667505893,
+      "n_records_with_label": 126
+     },
+     "miscounting": {
+      "iou": 0.3082659915912286,
+      "cor": 0.36051156272416407,
+      "n_records_with_label": 211
+     },
+     "other": {
+      "iou": 0.04772075242334998,
+      "cor": 0.04200730559776582,
+      "n_records_with_label": 153
+     }
+    },
+    {
+     "invention": {
+      "iou": 0.17595254504867844,
+      "cor": 0.1692430702672841,
+      "n_records_with_label": 680
+     },
+     "mischaracterization": {
+      "iou": 0.05558618966483742,
+      "cor": 0.06362558477621877,
+      "n_records_with_label": 708
+     },
+     "OCR": {
+      "iou": 0.4248621709660798,
+      "cor": 0.46304077737128524,
+      "n_records_with_label": 129
+     },
+     "miscounting": {
+      "iou": 0.28486632564190334,
+      "cor": 0.3389490974016734,
+      "n_records_with_label": 207
+     },
+     "other": {
+      "iou": 0.048198056085618654,
+      "cor": 0.042148322374433146,
+      "n_records_with_label": 140
+     }
+    }
+   ]
+  },
+  "F2 = 3a v2": {
+   "val_select": [
+    {
+     "invention": {
+      "iou": 0.20929403533193647,
+      "cor": 0.2285582914955457,
+      "n_records_with_label": 687
+     },
+     "mischaracterization": {
+      "iou": 0.13122405443808313,
+      "cor": 0.16797564718286093,
+      "n_records_with_label": 774
+     },
+     "OCR": {
+      "iou": 0.33601967942794825,
+      "cor": 0.3694285521891347,
+      "n_records_with_label": 91
+     },
+     "miscounting": {
+      "iou": 0.42694185788419925,
+      "cor": 0.4795703207351939,
+      "n_records_with_label": 198
+     },
+     "other": {
+      "iou": 0.0753714010856868,
+      "cor": 0.07728993343117205,
+      "n_records_with_label": 147
+     }
+    },
+    {
+     "invention": {
+      "iou": 0.20605991469972126,
+      "cor": 0.22901430317794216,
+      "n_records_with_label": 684
+     },
+     "mischaracterization": {
+      "iou": 0.13801946855130548,
+      "cor": 0.17147534455284566,
+      "n_records_with_label": 771
+     },
+     "OCR": {
+      "iou": 0.3299098573624777,
+      "cor": 0.3592727821830839,
+      "n_records_with_label": 98
+     },
+     "miscounting": {
+      "iou": 0.380417720833217,
+      "cor": 0.4347283013107075,
+      "n_records_with_label": 204
+     },
+     "other": {
+      "iou": 0.048220018418390166,
+      "cor": 0.05637056416043395,
+      "n_records_with_label": 162
+     }
+    },
+    {
+     "invention": {
+      "iou": 0.19665109942958459,
+      "cor": 0.2229374863615798,
+      "n_records_with_label": 678
+     },
+     "mischaracterization": {
+      "iou": 0.14365032027429983,
+      "cor": 0.17878646890380975,
+      "n_records_with_label": 786
+     },
+     "OCR": {
+      "iou": 0.30380340785163,
+      "cor": 0.3369503447549081,
+      "n_records_with_label": 99
+     },
+     "miscounting": {
+      "iou": 0.3959814703066566,
+      "cor": 0.44318368643168154,
+      "n_records_with_label": 199
+     },
+     "other": {
+      "iou": 0.05648757513788189,
+      "cor": 0.05707932686316089,
+      "n_records_with_label": 163
+     }
+    }
+   ],
+   "val_confirm": [
+    {
+     "invention": {
+      "iou": 0.2190146705113051,
+      "cor": 0.23126332190916582,
+      "n_records_with_label": 677
+     },
+     "mischaracterization": {
+      "iou": 0.12996144236296497,
+      "cor": 0.15682651964371752,
+      "n_records_with_label": 770
+     },
+     "OCR": {
+      "iou": 0.4413722059703276,
+      "cor": 0.46732687215989877,
+      "n_records_with_label": 127
+     },
+     "miscounting": {
+      "iou": 0.3714440545321967,
+      "cor": 0.4154096648486496,
+      "n_records_with_label": 206
+     },
+     "other": {
+      "iou": 0.06316463523713835,
+      "cor": 0.07193872030887677,
+      "n_records_with_label": 147
+     }
+    },
+    {
+     "invention": {
+      "iou": 0.21415971989690427,
+      "cor": 0.2313759749918187,
+      "n_records_with_label": 660
+     },
+     "mischaracterization": {
+      "iou": 0.12886299700357287,
+      "cor": 0.156805374449537,
+      "n_records_with_label": 767
+     },
+     "OCR": {
+      "iou": 0.42294546371406616,
+      "cor": 0.4480046292987079,
+      "n_records_with_label": 140
+     },
+     "miscounting": {
+      "iou": 0.3485494181618557,
+      "cor": 0.3992135558583139,
+      "n_records_with_label": 208
+     },
+     "other": {
+      "iou": 0.07320478187234077,
+      "cor": 0.08108921253887616,
+      "n_records_with_label": 155
+     }
+    },
+    {
+     "invention": {
+      "iou": 0.21475224044917046,
+      "cor": 0.23191934720094473,
+      "n_records_with_label": 660
+     },
+     "mischaracterization": {
+      "iou": 0.13231247159333406,
+      "cor": 0.15734583336313285,
+      "n_records_with_label": 789
+     },
+     "OCR": {
+      "iou": 0.4549152294242922,
+      "cor": 0.4918376140554219,
+      "n_records_with_label": 131
+     },
+     "miscounting": {
+      "iou": 0.3423436841801496,
+      "cor": 0.3800739224060877,
+      "n_records_with_label": 212
+     },
+     "other": {
+      "iou": 0.06188983009772905,
+      "cor": 0.06835430496652094,
+      "n_records_with_label": 150
+     }
+    }
+   ]
+  },
+  "F3 = F2 + probe voter": {
+   "val_select": [
+    {
+     "invention": {
+      "iou": 0.21640266900331007,
+      "cor": 0.23478125617898124,
+      "n_records_with_label": 688
+     },
+     "mischaracterization": {
+      "iou": 0.13842679645726197,
+      "cor": 0.1746513839823712,
+      "n_records_with_label": 777
+     },
+     "OCR": {
+      "iou": 0.3255676433112182,
+      "cor": 0.3595825678927909,
+      "n_records_with_label": 93
+     },
+     "miscounting": {
+      "iou": 0.4340336883504298,
+      "cor": 0.4881440859180065,
+      "n_records_with_label": 200
+     },
+     "other": {
+      "iou": 0.07839483268054698,
+      "cor": 0.08168669707133164,
+      "n_records_with_label": 147
+     }
+    },
+    {
+     "invention": {
+      "iou": 0.21326373381061667,
+      "cor": 0.2362305157024961,
+      "n_records_with_label": 690
+     },
+     "mischaracterization": {
+      "iou": 0.14306616947807427,
+      "cor": 0.17705363001908078,
+      "n_records_with_label": 772
+     },
+     "OCR": {
+      "iou": 0.33318283934061893,
+      "cor": 0.3647388314572824,
+      "n_records_with_label": 101
+     },
+     "miscounting": {
+      "iou": 0.39224043053469226,
+      "cor": 0.4471630334151615,
+      "n_records_with_label": 206
+     },
+     "other": {
+      "iou": 0.0581526783510501,
+      "cor": 0.06377369440808608,
+      "n_records_with_label": 162
+     }
+    },
+    {
+     "invention": {
+      "iou": 0.20650936429433203,
+      "cor": 0.23081667612046453,
+      "n_records_with_label": 683
+     },
+     "mischaracterization": {
+      "iou": 0.14466754388355818,
+      "cor": 0.18193893198827357,
+      "n_records_with_label": 791
+     },
+     "OCR": {
+      "iou": 0.33895501784376464,
+      "cor": 0.3739441862855946,
+      "n_records_with_label": 100
+     },
+     "miscounting": {
+      "iou": 0.41316553326857836,
+      "cor": 0.46048715445893745,
+      "n_records_with_label": 201
+     },
+     "other": {
+      "iou": 0.058805230216273166,
+      "cor": 0.06072123323976678,
+      "n_records_with_label": 163
+     }
+    }
+   ],
+   "val_confirm": [
+    {
+     "invention": {
+      "iou": 0.22199631707887213,
+      "cor": 0.2304457897458129,
+      "n_records_with_label": 680
+     },
+     "mischaracterization": {
+      "iou": 0.132296625464257,
+      "cor": 0.15847067278017699,
+      "n_records_with_label": 775
+     },
+     "OCR": {
+      "iou": 0.4571759659671054,
+      "cor": 0.4885476165239738,
+      "n_records_with_label": 127
+     },
+     "miscounting": {
+      "iou": 0.37472210257793487,
+      "cor": 0.4196049111112692,
+      "n_records_with_label": 207
+     },
+     "other": {
+      "iou": 0.0736130080363726,
+      "cor": 0.08427657796372288,
+      "n_records_with_label": 148
+     }
+    },
+    {
+     "invention": {
+      "iou": 0.2272135648639039,
+      "cor": 0.23897069440466806,
+      "n_records_with_label": 668
+     },
+     "mischaracterization": {
+      "iou": 0.13151086253057762,
+      "cor": 0.15756900905046212,
+      "n_records_with_label": 769
+     },
+     "OCR": {
+      "iou": 0.42314773765351144,
+      "cor": 0.4493134124612617,
+      "n_records_with_label": 143
+     },
+     "miscounting": {
+      "iou": 0.3605528336648572,
+      "cor": 0.4154412092580606,
+      "n_records_with_label": 210
+     },
+     "other": {
+      "iou": 0.08305298076754249,
+      "cor": 0.09211311163808086,
+      "n_records_with_label": 156
+     }
+    },
+    {
+     "invention": {
+      "iou": 0.21842619696321747,
+      "cor": 0.2341805638623596,
+      "n_records_with_label": 667
+     },
+     "mischaracterization": {
+      "iou": 0.13482770904777444,
+      "cor": 0.16126397919122484,
+      "n_records_with_label": 792
+     },
+     "OCR": {
+      "iou": 0.4718082781079093,
+      "cor": 0.5103461436503401,
+      "n_records_with_label": 134
+     },
+     "miscounting": {
+      "iou": 0.3548206984080919,
+      "cor": 0.39442824009615085,
+      "n_records_with_label": 212
+     },
+     "other": {
+      "iou": 0.06855649676439571,
+      "cor": 0.07502097163318759,
+      "n_records_with_label": 150
+     }
+    }
+   ]
+  },
+  "G1 = F3 + graded prob": {
+   "val_select": [
+    {
+     "invention": {
+      "iou": 0.21640266900331007,
+      "cor": 0.2433223027763875,
+      "n_records_with_label": 688
+     },
+     "mischaracterization": {
+      "iou": 0.13842679645726197,
+      "cor": 0.17611165076463348,
+      "n_records_with_label": 777
+     },
+     "OCR": {
+      "iou": 0.3255676433112182,
+      "cor": 0.35693454138846537,
+      "n_records_with_label": 93
+     },
+     "miscounting": {
+      "iou": 0.4340336883504298,
+      "cor": 0.4886404361785553,
+      "n_records_with_label": 200
+     },
+     "other": {
+      "iou": 0.07839483268054698,
+      "cor": 0.08168669707133164,
+      "n_records_with_label": 147
+     }
+    },
+    {
+     "invention": {
+      "iou": 0.21326373381061667,
+      "cor": 0.2459223204644652,
+      "n_records_with_label": 690
+     },
+     "mischaracterization": {
+      "iou": 0.14306616947807427,
+      "cor": 0.17876258958647379,
+      "n_records_with_label": 772
+     },
+     "OCR": {
+      "iou": 0.33318283934061893,
+      "cor": 0.3622550653720255,
+      "n_records_with_label": 101
+     },
+     "miscounting": {
+      "iou": 0.39224043053469226,
+      "cor": 0.4478613574146569,
+      "n_records_with_label": 206
+     },
+     "other": {
+      "iou": 0.0581526783510501,
+      "cor": 0.06377325676185923,
+      "n_records_with_label": 162
+     }
+    },
+    {
+     "invention": {
+      "iou": 0.20650936429433203,
+      "cor": 0.24120275194359367,
+      "n_records_with_label": 683
+     },
+     "mischaracterization": {
+      "iou": 0.14466754388355818,
+      "cor": 0.18267370276002173,
+      "n_records_with_label": 791
+     },
+     "OCR": {
+      "iou": 0.33895501784376464,
+      "cor": 0.37248864320270914,
+      "n_records_with_label": 100
+     },
+     "miscounting": {
+      "iou": 0.41316553326857836,
+      "cor": 0.46100879327987915,
+      "n_records_with_label": 201
+     },
+     "other": {
+      "iou": 0.058805230216273166,
+      "cor": 0.06069848731874331,
+      "n_records_with_label": 163
+     }
+    }
+   ],
+   "val_confirm": [
+    {
+     "invention": {
+      "iou": 0.22199631707887213,
+      "cor": 0.2570716218893443,
+      "n_records_with_label": 680
+     },
+     "mischaracterization": {
+      "iou": 0.132296625464257,
+      "cor": 0.1600048760758682,
+      "n_records_with_label": 775
+     },
+     "OCR": {
+      "iou": 0.4571759659671054,
+      "cor": 0.4884989961618037,
+      "n_records_with_label": 127
+     },
+     "miscounting": {
+      "iou": 0.37472210257793487,
+      "cor": 0.4201749212649251,
+      "n_records_with_label": 207
+     },
+     "other": {
+      "iou": 0.0736130080363726,
+      "cor": 0.08225111723542237,
+      "n_records_with_label": 148
+     }
+    },
+    {
+     "invention": {
+      "iou": 0.2272135648639039,
+      "cor": 0.25969136106251595,
+      "n_records_with_label": 668
+     },
+     "mischaracterization": {
+      "iou": 0.13151086253057762,
+      "cor": 0.15993989994021957,
+      "n_records_with_label": 769
+     },
+     "OCR": {
+      "iou": 0.42314773765351144,
+      "cor": 0.44975739267546616,
+      "n_records_with_label": 143
+     },
+     "miscounting": {
+      "iou": 0.3605528336648572,
+      "cor": 0.41603260228645017,
+      "n_records_with_label": 210
+     },
+     "other": {
+      "iou": 0.08305298076754249,
+      "cor": 0.09121657465090242,
+      "n_records_with_label": 156
+     }
+    },
+    {
+     "invention": {
+      "iou": 0.21842619696321747,
+      "cor": 0.25279283909667477,
+      "n_records_with_label": 667
+     },
+     "mischaracterization": {
+      "iou": 0.13482770904777444,
+      "cor": 0.16352476019829168,
+      "n_records_with_label": 792
+     },
+     "OCR": {
+      "iou": 0.4718082781079093,
+      "cor": 0.5106717798177793,
+      "n_records_with_label": 134
+     },
+     "miscounting": {
+      "iou": 0.3548206984080919,
+      "cor": 0.39567381405965574,
+      "n_records_with_label": 212
+     },
+     "other": {
+      "iou": 0.06855649676439571,
+      "cor": 0.07563138386250595,
+      "n_records_with_label": 150
+     }
+    }
+   ]
+  }
+ },
+ "h4": {
+  "cells": {
+   "OCR|en": {
+    "3a_v2": 0.4480019203000138,
+    "3b_v2": 0.42884641964714404
+   },
+   "OCR|fr": {
+    "3a_v2": 0.360327582851661,
+    "3b_v2": 0.2826277849973468
+   },
+   "OCR|it": {
+    "3a_v2": 0.3042769530960882,
+    "3b_v2": 0.15811971164030594
+   },
+   "OCR|zh": {
+    "3a_v2": 0.22492298127415697,
+    "3b_v2": 0.16583746015739462
+   },
+   "invention|en": {
+    "3a_v2": 0.17186469716090613,
+    "3b_v2": 0.11859627000334143
+   },
+   "invention|fr": {
+    "3a_v2": 0.2152054653256681,
+    "3b_v2": 0.1859682442462721
+   },
+   "invention|it": {
+    "3a_v2": 0.2467481526353543,
+    "3b_v2": 0.15839009671880375
+   },
+   "invention|zh": {
+    "3a_v2": 0.29020781717308347,
+    "3b_v2": 0.2158019706955704
+   },
+   "mischaracterization|en": {
+    "3a_v2": 0.14850233112386804,
+    "3b_v2": 0.07000300702218158
+   },
+   "mischaracterization|fr": {
+    "3a_v2": 0.18253091707715208,
+    "3b_v2": 0.10154175442440665
+   },
+   "mischaracterization|it": {
+    "3a_v2": 0.2121517387657761,
+    "3b_v2": 0.11041308251859445
+   },
+   "mischaracterization|zh": {
+    "3a_v2": 0.14369037391669096,
+    "3b_v2": 0.03755806974920897
+   },
+   "miscounting|en": {
+    "3a_v2": 0.46590556138309064,
+    "3b_v2": 0.36176388978823654
+   },
+   "miscounting|fr": {
+    "3a_v2": 0.5307632399745353,
+    "3b_v2": 0.4753302151047829
+   },
+   "miscounting|it": {
+    "3a_v2": 0.44637040670984934,
+    "3b_v2": 0.3589449342973299
+   },
+   "miscounting|zh": {
+    "3a_v2": 0.3764387768063641,
+    "3b_v2": 0.36718148482345286
+   },
+   "other|en": {
+    "3a_v2": 0.13037105604512664,
+    "3b_v2": 0.0503474228888894
+   },
+   "other|fr": {
+    "3a_v2": 0.021527682103171016,
+    "3b_v2": 0.03189098558714133
+   },
+   "other|it": {
+    "3a_v2": 0.07557946578742135,
+    "3b_v2": 0.08996584099304983
+   },
+   "other|zh": {
+    "3a_v2": 0.007931007675633497,
+    "3b_v2": 0.04057239057239057
+   }
+  },
+  "spearman": 0.9488721804511278,
+  "p": 1.882169816117013e-10
+ },
+ "record_corr_C0_vs_probe": [
+  0.7627399649385429,
+  0.7498353623222915,
+  0.7634410358718412
+ ]
+}
