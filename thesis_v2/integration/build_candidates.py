@@ -6,6 +6,9 @@ Candidates (fixed in advance -- no other combinations are tried):
   F3  F2 + the 3b CRF probe as ONE extra voter (same k; the probe counts like one decode)
   F4  Part-1 committee: one greedy prediction per backbone, majority vote
       (k = ceil(n/2), not tuned). User-approved optional candidate, reported separately.
+With "per_label": true and "greedy_voter": true (R3 / D3_3a2, results/preregistration.md R5)
+every vote is per label, and F2/F3 also count F1's greedy prediction as one voter, so F2
+reproduces 3a v2 exactly.
 Each of F1-F3 is built per seed; Decision 4 uses the mean val_select primary over
 seeds, the choice is confirmed on val_confirm, and test predictions are written for
 every seed of the chosen system (the user submits them).
@@ -46,35 +49,41 @@ def _load(path):
     return {r["id"]: r for r in data_io.load_jsonl(path)}
 
 
-def combine(records, sample_file, k, probe_file=None):
+def combine(records, sample_file, k, probe_file=None, greedy_file=None, per_label=False):
     samples, probe = _load(sample_file), (_load(probe_file) if probe_file else None)
+    greedy = _load(greedy_file) if greedy_file else None
     out = []
     for r in records:
         voters = list(samples[r["id"]]["samples"])
+        if greedy is not None:
+            voters.append(greedy[r["id"]]["labels"])
         if probe is not None:
             voters.append(probe[r["id"]]["labels"])
-        out.append({"id": r["id"], "labels": vote(voters, len(r["response"]), k)})
+        out.append({"id": r["id"], "labels": vote(voters, len(r["response"]), k, per_label=per_label)})
     return out
 
 
-def committee(records, files):
+def committee(records, files, per_label=False):
     preds = [_load(f) for f in files]
     k = math.ceil(len(files) / 2)
-    return [{"id": r["id"], "labels": vote([p[r["id"]]["labels"] for p in preds], len(r["response"]), k)}
+    return [{"id": r["id"], "labels": vote([p[r["id"]]["labels"] for p in preds], len(r["response"]), k,
+                                           per_label=per_label)}
             for r in records]
 
 
 def build(cfg, split, seed=None):
     recs = data_io.load_jsonl(data_io.VAL_FILE if split == "val" else data_io.TEST_FILE)
     out = {}
+    pl = cfg.get("per_label", False)
     if seed is not None:
         s = cfg["seeds"][seed]
+        g = s["f1"][split] if cfg.get("greedy_voter") else None
         out["F1"] = list(_load(s["f1"][split]).values())
-        out["F2"] = combine(recs, s["samples"][split], cfg["k"])
+        out["F2"] = combine(recs, s["samples"][split], cfg["k"], greedy_file=g, per_label=pl)
         if "probe" in s:
-            out["F3"] = combine(recs, s["samples"][split], cfg["k"], s["probe"][split])
+            out["F3"] = combine(recs, s["samples"][split], cfg["k"], s["probe"][split], greedy_file=g, per_label=pl)
     elif cfg.get("committee"):
-        out["F4"] = committee(recs, cfg["committee"][split])
+        out["F4"] = committee(recs, cfg["committee"][split], per_label=pl)
     return out
 
 

@@ -254,3 +254,34 @@ steps (checked). D2c_R4 (candidates C4x-b, C1-b) is logged with chosen = none.
 - **Part 2 conclusion.** Five conditions, C1, C4, C4x, C4x-b and C1-b, failed to beat C0
   under the parser fix and the prior match. No synthetic or upsampled condition beats
   fine-tuning on the original data alone at this dose. Per R4, no further revision follows.
+
+## R5: Decision 4, integration as run (2026-11-12, written before any F3/F4 score is seen)
+
+The original plan fixes the candidates. Three things have changed since it was written,
+so this section records how each candidate is built now. Nothing else is tried.
+
+- **F1 = C0, greedy (dec2), all 3 seeds.** No Part 2 condition was promoted (D2, D2b,
+  D2c_R4), so "Part-2 best" is the original-data baseline itself.
+- **F2 = 3a v2, exactly as decided in D3_3a2_qwen_seed42.** Votes are per label (R3). The
+  voters are 8 samples (T=0.7) plus F1's greedy prediction, and k=3. Check: F2 must
+  reproduce the 3a v2 val_select scores (0.4404 / 0.4352 / 0.4344).
+- **F3 = F2's voters plus the 3b v2 multilabel CRF probe (crfml) of the same seed, as ONE
+  more voter.** That makes 10 voters, with the same per-label vote and the same k=3 (the
+  plan says "same k"; k is not re-chosen). Seed s of the probe pairs with adapter seed s.
+- **F4 = the 4-backbone committee from D1, seed 42.** The members are Qwen3-VL-8B (dec2),
+  Gemma-3-12B, InternVL3-8B and Pixtral-12B, with a per-label vote and k = ceil(4/2) = 2.
+  Limitation: the three non-Qwen backbones kept no raw generations, so they appear with
+  the old decoder. Re-predicting them is not worth several GPU-days. F4 has one seed and,
+  as planned, is reported separately.
+
+**Rule.**
+- D4 picks the highest mean val_select Cor+Lbl over seeds; F4 enters with its one
+  seed. The decision is logged once.
+- val_confirm is attached for the chosen system.
+- If F3 is chosen, its claim against C0 uses the same 3-seed "beats baseline" rule as
+  3a v2.
+- Its test files, one per seed, are written for the user to submit.
+- If F2 is chosen, its 3 test results already exist (0.4195 mean), and nothing new is
+  submitted.
+- If F4 is chosen, it is still compared against F1 on seed 42 only. It cannot make a
+  3-seed claim.
