@@ -285,3 +285,30 @@ so this section records how each candidate is built now. Nothing else is tried.
   submitted.
 - If F4 is chosen, it is still compared against F1 on seed 42 only. It cannot make a
   3-seed claim.
+
+**Outcome, Decision 4 (D4_final, 2026-11-12): F3 is chosen.** F2 reproduced 3a v2
+record for record on all three seeds (checked before D4 was logged).
+
+| val_select Cor+Lbl | Seed 42 | Seed 123 | Seed 2024 | Mean |
+|---|---|---|---|---|
+| F1 = C0 | 0.4310 | 0.4289 | 0.4264 | 0.4288 |
+| F2 = 3a v2 | 0.4404 | 0.4352 | 0.4344 | 0.4367 |
+| **F3 = F2 + crfml probe voter** | **0.4436** | **0.4402** | **0.4372** | **0.4404** |
+| F4 = 4-backbone committee | 0.4355 | -- | -- | 0.4355 |
+
+3-seed "beats baseline" check, F3 against C0 (95% CI from records averaged over seeds):
+
+| | Mean gain | CI | Per seed |
+|---|---|---|---|
+| val_select | +0.0116 (C0 std 0.0023) | [+0.0061, +0.0171] | +0.0126 / +0.0114 / +0.0109 |
+| val_confirm | +0.0029 | [-0.0031, +0.0090] | +0.0059 / +0.0007 / +0.0020 |
+
+- (a) passes, and (b) passes the sign check.
+- (b) fails the CI check: the lower bound is -0.0031. As with 3a v2, the strict rule
+  is not met.
+- What the probe adds over F2: on val_select +0.0037 [+0.0015, +0.0059], positive on
+  every seed; on val_confirm +0.0009 [-0.0015, +0.0034].
+- F4 (one seed, old decoder for three of its members) is +0.0045 over Qwen seed 42 alone
+  and below F2 and F3. It is reported separately, as planned.
+- Test files for F3, one per seed (format-checked), are in
+  `runs/integration/final/submission_F3_seed{42,123,2024}/`, for the user to submit.
