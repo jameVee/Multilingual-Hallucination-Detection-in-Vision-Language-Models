@@ -8,6 +8,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent.parent
 paper = (HERE.parent / "paper" / "references.bib").read_text(encoding="utf-8")
 paper = re.sub(r'\n\s*abstract\s*=\s*".*?",?\n', "\n", paper, flags=re.S)
+# the overview paper is now in the ACL Anthology: its published entry lives in extra_refs.bib
+paper = re.sub(r"@misc\{vazquez2026shroomvisionsoverview,.*?\}\s*,\s*\}", "", paper, flags=re.S)
 extra = (HERE / "figures" / "extra_refs.bib").read_text(encoding="utf-8")
 paszke = """@article{paszke2019pytorch,
   title={Pytorch: An imperative style, high-performance deep learning library},
