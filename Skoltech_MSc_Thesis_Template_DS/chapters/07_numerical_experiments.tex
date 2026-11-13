@@ -68,9 +68,70 @@ Section~\ref{sec:decoder} showed that the shared-task decoder caps validation Co
 \paragraph{Feature-coverage leak.}
 In our earlier uncertainty pipeline, features were extracted for train and validation records \emph{with} hallucinations only. The 859 clean validation records (28\%) therefore received empty predictions, which the official metric scores as perfect. This inflated every validation number of that pipeline, and it explains part of the collapse of our uncertainty-only submission on test (0.18 Cor+Lbl). In this thesis, features were extracted for every record, and the evaluation code refuses to score a feature-based method unless every record has features.
 
+\section{Part 2: synthetic training data}\label{sec:exp-synth}
+
+\paragraph{Realism.}
+Table~\ref{tab:c2st} shows the classifier two-sample test for each construction method. Template-based heuristic injection, as used in our shared-task system, is almost perfectly separable from real spans by text alone (AUC 0.92--1.00). LLM-written injections are only slightly better (0.87--0.91). Even a revised heuristic that edits real quoted text and real count expressions in place stays at 0.81--0.93. Retrieval-grounded transplants (C4) are close to indistinguishable: 0.51 for OCR and at most 0.70 overall. \textbf{H3(a) is supported}: transplanting real annotated hallucinations removes most of the text-only shortcut.
+
+\begin{table}[!htb]
+    \centering
+    \caption{Classifier two-sample test on training data: AUC of a TF-IDF logistic-regression classifier separating synthetic from real spans with their context (image-grouped cross-validation; 0.5 = indistinguishable).}
+    \label{tab:c2st}
+    \begin{tabular}{lccccc}
+    \toprule
+    Method & Invention & Mischar. & OCR & Miscount. & Other \\
+    \midrule
+    Heuristic (shared-task system) & 1.000 & 0.943 & 0.999 & 0.923 & 0.978 \\
+    LLM-written (shared-task system) & -- & -- & 0.867 & 0.914 & 0.867 \\
+    Revised heuristic, in place & -- & -- & 0.840 & 0.813 & 0.925 \\
+    C4 retrieval transplants & 0.651 & 0.561 & \textbf{0.512} & 0.658 & 0.701 \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+\paragraph{Effect on the judge.}
+Table~\ref{tab:part2} gives the training conditions. They were screened with seed 42 on val\_select. A condition would be promoted to three seeds if it gained at least $+0.0055$, a pre-registered threshold equal to the known seed standard deviation of the old pipeline. None did. Under the shared-task decoder, the same pattern had already been seen in a first round: C1 $-0.0024$, C4 $-0.0040$, C4x $+0.0024$.
+
+\begin{table}[!htb]
+    \centering
+    \caption{Part 2: synthetic-data conditions (seed 42, val\_select, dual-label decoder). ``Halluc.'' = share of hallucinated training records. The labeled and clean columns split the change of Cor+Lbl into the part contributed by gold-labeled and by gold-clean records.}
+    \label{tab:part2}
+    \resizebox{\textwidth}{!}{%
+    \begin{tabular}{lrrrcccc}
+    \toprule
+    Condition & Added & Halluc. & Steps & Cor+Lbl ($\Delta$, 95\% CI) & $\Delta$ labeled & $\Delta$ clean & Clean flagged \\
+    \midrule
+    C0 & -- & 71.6\% & 3,020 & 0.4310 & -- & -- & 22 \\
+    C1 upsampling & 8,301 & 83.1\% & 5,094 & 0.4315 ($+0.0004$ [$-$0.011, +0.013]) & $+0.0150$ & $-0.0145$ & 44 \\
+    C4 transplants (rare) & 719 & 73.2\% & 3,200 & 0.4285 ($-0.0026$ [$-$0.012, +0.007]) & $-0.0032$ & $+0.0006$ & 21 \\
+    C4x transplants (all) & 2,075 & 75.7\% & 3,538 & 0.4332 ($+0.0021$ [$-$0.008, +0.013]) & $+0.0120$ & $-0.0099$ & 37 \\
+    C4x-b prior-matched & 2,900 & 71.6\% & 3,020 & 0.4228 ($-0.0083$ [$-$0.019, +0.002]) & $-0.0050$ & $-0.0033$ & 27 \\
+    C1-b prior-matched & 11,600 & 71.6\% & 3,020 & 0.4213 ($-0.0097$ [$-$0.020, +0.001]) & $-0.0118$ & $+0.0021$ & 19 \\
+    \bottomrule
+    \end{tabular}}
+\end{table}
+
+\paragraph{Why it does not help.}
+The decomposition in Table~\ref{tab:part2} explains the result. Of the val\_select Cor+Lbl, 0.2774 comes from clean records, which score 1 only when nothing is flagged, and 0.1536 from records with gold hallucinations.
+\begin{itemize}
+    \item \textbf{The gain is real but offset.} C1 and C4x do improve detection on hallucinated records ($+0.015$ and $+0.012$, on both validation halves). They lose almost exactly as much on clean records, because they flag twice as many of them (44 and 37 against 22).
+    \item \textbf{The false alarms follow the prior.} False alarms grow in the same order as the share of hallucinated training records (73\% $\to$ 76\% $\to$ 83\%). The synthetic records shift the model's prior towards ``there is a hallucination''.
+    \item \textbf{Matching the prior and the steps.} The prior-matched variants restore the hallucinated share and C0's number of steps. As intended, the false alarms return to C0's level (27 and 19). The gain on hallucinated records disappears with them.
+    \item \textbf{Conclusion.} The extra recall of C1 and C4x came from flagging more, not from better discrimination.
+    \item \textbf{Confounds of the prior-matched runs.} At a fixed step budget, C4x-b sees each real record 1.6 rather than 2 times. C1-b moves exposures from common to rare categories, and then flags fewer records than C0 (507 against 575).
+\end{itemize}
+
+\paragraph{Hypotheses H2 and H3(b).}
+\begin{itemize}
+    \item \textbf{H2, separate per-category effects: supported for the conditions run.} Upsampling mostly helps ``other'' ($+0.059$ per-category Cor) and miscounting ($+0.032$). Transplants help ``other'' ($+0.038$) and leave OCR unchanged ($0.336 \to 0.338$).
+    \item \textbf{H2, the OCR part: not tested.} Comparing heuristic injection on OCR needed a heuristic-injection training run, and no injection condition passed the screening rule that gated it. The LLM-written condition was gated the same way and was never run, so no API budget was spent.
+    \item \textbf{H3(b): no measurable effect.} C4 transplants are realistic but do not change OCR at this dose.
+    \item \textbf{Overall.} No synthetic or upsampled condition beats fine-tuning on the original data alone at this data size.
+\end{itemize}
+
 \section{Part 3 and fusion: building up the detector}\label{sec:exp-ablation}
 
-Table~\ref{tab:ablation} adds the components one at a time. Table~\ref{tab:gains} gives the gains with confidence intervals and checks them against the ``beats baseline'' criterion.
+No Part~2 condition beat C0, so the integration candidate F1 is C0 itself, and the uncertainty components are built on the judge trained on the original data. Table~\ref{tab:ablation} adds the components one at a time. Table~\ref{tab:gains} gives the gains with confidence intervals and checks them against the ``beats baseline'' criterion.
 
 \begin{table}[!htb]
     \centering
@@ -132,6 +193,47 @@ Table~\ref{tab:ablation} adds the components one at a time. Table~\ref{tab:gains
     \item \textbf{Caveat.} The graded output was added after the integration decision (rule R6), so it is a post-hoc extension; Section~\ref{sec:exp-graded} gives its pre-registered candidates.
 \end{itemize}
 
+\section{Graded probabilities: the pre-registered candidates}\label{sec:exp-graded}
+
+Rule R6 fixed three candidates before any of them was scored. All three keep exactly the characters of F3, so IoU is identical:
+\begin{description}
+    \item[G0] F3 unchanged, with span-mean probability;
+    \item[G1] the per-character mean probability $\bar p_L(c)$, Equation~\eqref{eq:graded};
+    \item[G2] the per-character vote fraction $\mathrm{votes}_L(c)/M$.
+\end{description}
+Their val\_select scores (three-seed means) are 0.4404 (G0), \textbf{0.4433} (G1) and 0.4422 (G2). G1 is better than G0 on every seed, by $+0.0027$, $+0.0032$ and $+0.0029$. The probabilities the judge writes therefore carry information beyond the vote count: weighting votes by them ranks characters better than counting votes alone. Against F3, G1's val\_select gain ($+0.0029$) is just below F3's seed standard deviation (0.0032). By the letter of the criterion it does not ``beat'' F3, although its gain is positive on every seed and on both halves, with intervals above zero.
+
+\section{Per-category analysis and H4}\label{sec:exp-category}
+
+Table~\ref{tab:category} breaks the val\_select score down by category, using the official per-category Cor, which is Cor restricted to that category's spans.
+
+\begin{table}[!htb]
+    \centering
+    \caption{Per-category Cor on val\_select (three-seed means). Share = share of validation answers containing the category.}
+    \label{tab:category}
+    \begin{tabular}{lccccc}
+    \toprule
+    System & Invention & Mischar. & OCR & Miscount. & Other \\
+     & (41\%) & (45\%) & (6\%) & (12\%) & (8\%) \\
+    \midrule
+    C0 & 0.209 & 0.151 & 0.341 & 0.433 & 0.040 \\
+    Probe alone & 0.167 & 0.082 & 0.293 & 0.389 & 0.058 \\
+    F2 & 0.227 & 0.173 & 0.355 & 0.452 & 0.064 \\
+    F3 & 0.234 & 0.178 & \textbf{0.366} & 0.465 & \textbf{0.069} \\
+    G1 & \textbf{0.243} & \textbf{0.179} & 0.364 & \textbf{0.466} & \textbf{0.069} \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+\paragraph{The categories differ in difficulty.}
+Miscounting and OCR, whose errors are short and often numeric or quoted, are found much better than invention and mischaracterization. Those two are the most frequent categories and the most often double-labelled, and they also show the most disagreement between annotators. The ``other'' category is almost never matched. Its real spans are mostly template leakage, refusals and repetition, which the judge rarely reproduces exactly.
+
+\paragraph{The components help in every category.}
+The vote improves every category over C0. The probe as a voter adds a further gain in all five. The probe alone is better than C0 only on ``other'' (0.058 against 0.040).
+
+\paragraph{H4.}
+Over the 20 category--language cells, the val\_select Cor of the voter (F2) and of the probe are strongly rank-correlated (Spearman $\rho = 0.95$), so both succeed and fail in the same cells. The cell-level part of \textbf{H4 is not supported}: the two mechanisms do not specialise in different categories or languages. At the record level, however, the per-record Cor+Lbl of the judge and the probe correlate only at Pearson 0.75--0.76 (three seeds). Their mistakes overlap, but not completely, and the gain of F3 over F2 shows that the overlap is small enough to exploit. Where the probe did differ by cell, it was better than the voter on ``other'' in French, Italian and Chinese.
+
 \section{Test results}\label{sec:exp-test}
 
 Table~\ref{tab:test} gives the official test scores, three submissions per system. Figure~\ref{fig:test} shows the individual seeds.
@@ -191,108 +293,6 @@ Table~\ref{tab:leaderboard} places the final detector in the official SHROOM-Vis
 \end{table}
 
 In Chinese the final detector would place third, 0.0009 behind second place. Our Cor is still well below that of the top teams: in English it is 0.4549 against 0.5534 for the winner. The remaining gap is mostly in how well the probabilities rank characters, not in where the spans are.
-
-\section{Graded probabilities: the pre-registered candidates}\label{sec:exp-graded}
-
-Rule R6 fixed three candidates before any of them was scored. All three keep exactly the characters of F3, so IoU is identical:
-\begin{description}
-    \item[G0] F3 unchanged, with span-mean probability;
-    \item[G1] the per-character mean probability $\bar p_L(c)$, Equation~\eqref{eq:graded};
-    \item[G2] the per-character vote fraction $\mathrm{votes}_L(c)/M$.
-\end{description}
-Their val\_select scores (three-seed means) are 0.4404 (G0), \textbf{0.4433} (G1) and 0.4422 (G2). G1 is better than G0 on every seed, by $+0.0027$, $+0.0032$ and $+0.0029$. The probabilities the judge writes therefore carry information beyond the vote count: weighting votes by them ranks characters better than counting votes alone. Against F3, G1's val\_select gain ($+0.0029$) is just below F3's seed standard deviation (0.0032). By the letter of the criterion it does not ``beat'' F3, although its gain is positive on every seed and on both halves, with intervals above zero.
-
-\section{Per-category analysis and H4}\label{sec:exp-category}
-
-Table~\ref{tab:category} breaks the val\_select score down by category, using the official per-category Cor, which is Cor restricted to that category's spans.
-
-\begin{table}[!htb]
-    \centering
-    \caption{Per-category Cor on val\_select (three-seed means). Share = share of validation answers containing the category.}
-    \label{tab:category}
-    \begin{tabular}{lccccc}
-    \toprule
-    System & Invention & Mischar. & OCR & Miscount. & Other \\
-     & (41\%) & (45\%) & (6\%) & (12\%) & (8\%) \\
-    \midrule
-    C0 & 0.209 & 0.151 & 0.341 & 0.433 & 0.040 \\
-    Probe alone & 0.167 & 0.082 & 0.293 & 0.389 & 0.058 \\
-    F2 & 0.227 & 0.173 & 0.355 & 0.452 & 0.064 \\
-    F3 & 0.234 & 0.178 & \textbf{0.366} & 0.465 & \textbf{0.069} \\
-    G1 & \textbf{0.243} & \textbf{0.179} & 0.364 & \textbf{0.466} & \textbf{0.069} \\
-    \bottomrule
-    \end{tabular}
-\end{table}
-
-\paragraph{The categories differ in difficulty.}
-Miscounting and OCR, whose errors are short and often numeric or quoted, are found much better than invention and mischaracterization. Those two are the most frequent categories and the most often double-labelled, and they also show the most disagreement between annotators. The ``other'' category is almost never matched. Its real spans are mostly template leakage, refusals and repetition, which the judge rarely reproduces exactly.
-
-\paragraph{The components help in every category.}
-The vote improves every category over C0. The probe as a voter adds a further gain in all five. The probe alone is better than C0 only on ``other'' (0.058 against 0.040).
-
-\paragraph{H4.}
-Over the 20 category--language cells, the val\_select Cor of the voter (F2) and of the probe are strongly rank-correlated (Spearman $\rho = 0.95$), so both succeed and fail in the same cells. The cell-level part of \textbf{H4 is not supported}: the two mechanisms do not specialise in different categories or languages. At the record level, however, the per-record Cor+Lbl of the judge and the probe correlate only at Pearson 0.75--0.76 (three seeds). Their mistakes overlap, but not completely, and the gain of F3 over F2 shows that the overlap is small enough to exploit. Where the probe did differ by cell, it was better than the voter on ``other'' in French, Italian and Chinese.
-
-\section{Part 2: synthetic training data}\label{sec:exp-synth}
-
-\paragraph{Realism.}
-Table~\ref{tab:c2st} shows the classifier two-sample test for each construction method. Template-based heuristic injection, as used in our shared-task system, is almost perfectly separable from real spans by text alone (AUC 0.92--1.00). LLM-written injections are only slightly better (0.87--0.91). Even a revised heuristic that edits real quoted text and real count expressions in place stays at 0.81--0.93. Retrieval-grounded transplants (C4) are close to indistinguishable: 0.51 for OCR and at most 0.70 overall. \textbf{H3(a) is supported}: transplanting real annotated hallucinations removes most of the text-only shortcut.
-
-\begin{table}[!htb]
-    \centering
-    \caption{Classifier two-sample test on training data: AUC of a TF-IDF logistic-regression classifier separating synthetic from real spans with their context (image-grouped cross-validation; 0.5 = indistinguishable).}
-    \label{tab:c2st}
-    \begin{tabular}{lccccc}
-    \toprule
-    Method & Invention & Mischar. & OCR & Miscount. & Other \\
-    \midrule
-    Heuristic (shared-task system) & 1.000 & 0.943 & 0.999 & 0.923 & 0.978 \\
-    LLM-written (shared-task system) & -- & -- & 0.867 & 0.914 & 0.867 \\
-    Revised heuristic, in place & -- & -- & 0.840 & 0.813 & 0.925 \\
-    C4 retrieval transplants & 0.651 & 0.561 & \textbf{0.512} & 0.658 & 0.701 \\
-    \bottomrule
-    \end{tabular}
-\end{table}
-
-\paragraph{Effect on the judge.}
-Table~\ref{tab:part2} gives the training conditions. They were screened with seed 42 on val\_select. A condition would be promoted to three seeds if it gained at least $+0.0055$, a pre-registered threshold equal to the known seed standard deviation of the old pipeline. None did. Under the shared-task decoder, the same pattern had already been seen in a first round: C1 $-0.0024$, C4 $-0.0040$, C4x $+0.0024$.
-
-\begin{table}[!htb]
-    \centering
-    \caption{Part 2: synthetic-data conditions (seed 42, val\_select, dual-label decoder). ``Halluc.'' = share of hallucinated training records. The labeled and clean columns split the change of Cor+Lbl into the part contributed by gold-labeled and by gold-clean records.}
-    \label{tab:part2}
-    \resizebox{\textwidth}{!}{%
-    \begin{tabular}{lrrrcccc}
-    \toprule
-    Condition & Added & Halluc. & Steps & Cor+Lbl ($\Delta$, 95\% CI) & $\Delta$ labeled & $\Delta$ clean & Clean flagged \\
-    \midrule
-    C0 & -- & 71.6\% & 3,020 & 0.4310 & -- & -- & 22 \\
-    C1 upsampling & 8,301 & 83.1\% & 5,094 & 0.4315 ($+0.0004$ [$-$0.011, +0.013]) & $+0.0150$ & $-0.0145$ & 44 \\
-    C4 transplants (rare) & 719 & 73.2\% & 3,200 & 0.4285 ($-0.0026$ [$-$0.012, +0.007]) & $-0.0032$ & $+0.0006$ & 21 \\
-    C4x transplants (all) & 2,075 & 75.7\% & 3,538 & 0.4332 ($+0.0021$ [$-$0.008, +0.013]) & $+0.0120$ & $-0.0099$ & 37 \\
-    C4x-b prior-matched & 2,900 & 71.6\% & 3,020 & 0.4228 ($-0.0083$ [$-$0.019, +0.002]) & $-0.0050$ & $-0.0033$ & 27 \\
-    C1-b prior-matched & 11,600 & 71.6\% & 3,020 & 0.4213 ($-0.0097$ [$-$0.020, +0.001]) & $-0.0118$ & $+0.0021$ & 19 \\
-    \bottomrule
-    \end{tabular}}
-\end{table}
-
-\paragraph{Why it does not help.}
-The decomposition in Table~\ref{tab:part2} explains the result. Of the val\_select Cor+Lbl, 0.2774 comes from clean records, which score 1 only when nothing is flagged, and 0.1536 from records with gold hallucinations.
-\begin{itemize}
-    \item \textbf{The gain is real but offset.} C1 and C4x do improve detection on hallucinated records ($+0.015$ and $+0.012$, on both validation halves). They lose almost exactly as much on clean records, because they flag twice as many of them (44 and 37 against 22).
-    \item \textbf{The false alarms follow the prior.} False alarms grow in the same order as the share of hallucinated training records (73\% $\to$ 76\% $\to$ 83\%). The synthetic records shift the model's prior towards ``there is a hallucination''.
-    \item \textbf{Matching the prior and the steps.} The prior-matched variants restore the hallucinated share and C0's number of steps. As intended, the false alarms return to C0's level (27 and 19). The gain on hallucinated records disappears with them.
-    \item \textbf{Conclusion.} The extra recall of C1 and C4x came from flagging more, not from better discrimination.
-    \item \textbf{Confounds of the prior-matched runs.} At a fixed step budget, C4x-b sees each real record 1.6 rather than 2 times. C1-b moves exposures from common to rare categories, and then flags fewer records than C0 (507 against 575).
-\end{itemize}
-
-\paragraph{Hypotheses H2 and H3(b).}
-\begin{itemize}
-    \item \textbf{H2, separate per-category effects: supported for the conditions run.} Upsampling mostly helps ``other'' ($+0.059$ per-category Cor) and miscounting ($+0.032$). Transplants help ``other'' ($+0.038$) and leave OCR unchanged ($0.336 \to 0.338$).
-    \item \textbf{H2, the OCR part: not tested.} Comparing heuristic injection on OCR needed a heuristic-injection training run, and no injection condition passed the screening rule that gated it. The LLM-written condition was gated the same way and was never run, so no API budget was spent.
-    \item \textbf{H3(b): no measurable effect.} C4 transplants are realistic but do not change OCR at this dose.
-    \item \textbf{Overall.} No synthetic or upsampled condition beats fine-tuning on the original data alone at this data size.
-\end{itemize}
 
 \section{Summary of decisions}
 

@@ -6,6 +6,7 @@ The thesis set out to build a span-level hallucination detector for multilingual
 
 \begin{itemize}
     \item \textbf{Judge backbone (Part 1).} Qwen3-VL-8B is the best of four VLM families under one fixed recipe, by more than the seed variance (H1 supported). Two fixes in the existing pipeline are worth as much as a new method. A label-aware span decoder lifts the official test score of the same generations by 0.012. A feature-coverage leak had made an earlier uncertainty pipeline look strong on validation, through free perfect scores on clean records.
+    \item \textbf{Synthetic data (Part 2).} Synthetic training data does not improve the judge, even when it is realistic by a classifier two-sample test. The clean/labeled decomposition shows that its gain on hallucinated answers comes from flagging more and is paid for by false alarms on clean answers. Matching the hallucinated share removes both. H2 holds for the conditions that were run, H3(a) holds and H3(b) shows no effect.
     \item \textbf{Uncertainty and fusion (Part 3).} Three components improve the judge, each with an interpretable mechanism.
     \begin{itemize}
         \item The per-label self-consistency vote over the judge's samples improves span localisation.
@@ -13,7 +14,6 @@ The thesis set out to build a span-level hallucination detector for multilingual
         \item Graded per-character probabilities improve the rank correlation with annotator agreement.
     \end{itemize}
     Together they reach Cor+Lbl 0.4296 on test against 0.4132 for the original-data judge (three-seed means). The gain holds for every seed and language, and on validation the final detector meets the pre-registered criterion on both halves.
-    \item \textbf{Synthetic data (Part 2).} Synthetic training data does not improve the judge, even when it is realistic by a classifier two-sample test. The clean/labeled decomposition shows that its gain on hallucinated answers comes from flagging more and is paid for by false alarms on clean answers. Matching the hallucinated share removes both. H2 holds for the conditions that were run, H3(a) holds and H3(b) shows no effect.
     \item \textbf{Overlap of the two uncertainty signals (H4).} The voter and the probe succeed in the same category--language cells (H4 not supported at the cell level), but their record-level errors are only partly shared.
 \end{itemize}
 
