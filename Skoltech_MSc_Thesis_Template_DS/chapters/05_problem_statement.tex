@@ -58,7 +58,7 @@ Predicting a wrong category is therefore penalised twice. The missed gold catego
 
 \section{Data}
 
-Table~\ref{tab:data} summarises the SHROOM-Visions 2026 data. Answers are long (on average 3.9 gold spans per hallucinated answer) and the categories are very unbalanced: OCR, other and miscounting occur in 6\%, 9\% and 12\% of training answers, against 41--44\% for invention and mischaracterization. Answers repeat images. There are 12,082 training answers over 2,054 images, and 3,020 validation answers over 1,473 images, 1,451 of which also appear in train. Test labels are hidden. Test predictions are scored by the organisers' leaderboard.
+Table~\ref{tab:data} summarises the SHROOM-Visions 2026 data. Answers are long (on average 3.9 gold spans per hallucinated answer) and the categories are very unbalanced: OCR, other and miscounting occur in 6\%, 9\% and 12\% of training answers, against 41--44\% for invention and mischaracterization. Answers repeat images. There are 12,082 training answers over 2,054 images, and 3,020 validation answers over 1,473 images, 1,451 of which also appear in train. Test has 4,898 answers over 400 images, about 12 answers per image, and none of these images appears in train or validation. Validation therefore measures a judge mostly on images it has seen in training, while test measures it on new images. Test labels are hidden. Test predictions are scored by the organisers' leaderboard.
 
 \begin{table}[!htb]
     \centering
@@ -70,7 +70,7 @@ Table~\ref{tab:data} summarises the SHROOM-Visions 2026 data. Answers are long (
     \midrule
     Train & 12,082 & 2,054 & 71.6\% & 41.3\% & 44.3\% & 6.0\% & 12.3\% & 8.9\% \\
     Validation & 3,020 & 1,473 & 71.6\% & 40.6\% & 45.0\% & 5.9\% & 11.9\% & 8.4\% \\
-    Test & 4,898 & -- & -- & -- & -- & -- & -- & -- \\
+    Test & 4,898 & 400 & -- & -- & -- & -- & -- & -- \\
     \bottomrule
     \end{tabular}
 \end{table}
