@@ -32,7 +32,7 @@ Methodologically, the program shows that validation reuse can be limited in prac
 
 \section{Comparative analysis}
 
-Compared with our shared-task entry, the final detector gains $+0.032$ Cor+Lbl on test. About half comes from engineering of the base pipeline: the reimplementation and the decoder fix. The other half comes from the uncertainty components. On the official ranking it would move from 8th, 6th, 7th and 5th to 5th, 5th, 5th and 3rd in English, French, Italian and Chinese. The remaining gap to the top teams is largest in Cor. In English, our Cor is 0.455 against 0.553 for the winner, while our IoU (0.405) is 0.08 behind its 0.487. This points to calibration of per-character probabilities, rather than span finding, as the most promising direction. The graded output already moved Cor by 0.014 without changing any span.
+Compared with our shared-task entry, the final detector gains $+0.032$ Cor+Lbl on test. About half comes from engineering of the base pipeline: the reimplementation and the decoder fix. The other half comes from the uncertainty components. On the post-competition leaderboard, our best G1 submission moved the team from 8th, 6th, 7th and 5th to 5th, 5th, 5th and 2nd in English, French, Italian and Chinese. The three-seed mean would rank 5th, 5th, 5th and 3rd. The remaining gap to the top teams is largest in Cor. In English, our Cor is 0.455 against 0.553 for the winner, while our IoU (0.405) is 0.08 behind its 0.487. This points to calibration of per-character probabilities, rather than span finding, as the most promising direction. The graded output already moved Cor by 0.014 without changing any span.
 
 \section{Limitations}
 

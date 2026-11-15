@@ -115,3 +115,4 @@ Cor	0.5008 (0.0022)	vs C0 0.4871 (+0.0137), F3 0.4869 (+0.0139)
 IoU	0.4515 (0.0036)	vs C0 0.4335 (+0.0180)
 per language (3-seed mean Cor+Lbl): EN 0.3906  FR 0.4204  IT 0.4237  ZH 0.4836
 leaderboard placement (Cor+Lbl, official ranking file): EN 5th, FR 5th, IT 5th, ZH 3rd (team entry SmurfCat was 8th / 6th / 7th / 5th)
+live leaderboard snapshot 2026-11-15 (best submission per team and language; all four SmurfCat entries = G1 seed 123): EN 5th 0.3920, FR 5th 0.4237, IT 5th 0.4286, ZH 2nd 0.4870

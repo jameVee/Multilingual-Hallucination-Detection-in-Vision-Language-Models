@@ -272,27 +272,34 @@ Table~\ref{tab:test} gives the official test scores, three submissions per syste
 \end{itemize}
 
 \paragraph{Leaderboard.}
-Table~\ref{tab:leaderboard} places the final detector in the official SHROOM-Visions ranking. The ranking lists each team's best submission per language. We place the three-seed mean, which is a conservative comparison. These are post-competition submissions, so they do not change the official standing.
+The SHROOM-Visions leaderboard stayed open after the competition and lists each team's best submission per language. Table~\ref{tab:leaderboard} shows where the final detector stands on it.
+\begin{itemize}
+    \item \textbf{Current position.} After our G1 submissions, the SmurfCat team is 5th in English, French and Italian and 2nd in Chinese, as of 15~November~2026. All four entries come from one submission, G1 with seed 123, and not from a mix of systems per language.
+    \item \textbf{Seed mean.} Seed 123 is the best of the three G1 seeds, so its position is optimistic. The three-seed mean, which is our test claim, would rank 5th, 5th, 5th and 3rd. In Chinese it is 0.0009 behind second place.
+    \item \textbf{Official ranking.} The ranking in the task overview~\cite{vazquez2026shroomvisionsoverview} was fixed at the evaluation deadline. It still lists our shared-task entry at 8th, 6th, 7th and 5th.
+\end{itemize}
 
 \begin{table}[!htb]
     \centering
-    \caption{Position in the official SHROOM-Visions Cor+Lbl ranking (29 entries for English, 22--23 for the other languages). G1 is the three-seed mean.}
+    \caption{Position on the SHROOM-Visions Cor+Lbl leaderboard (29 entries for English, 22--23 for the other languages; snapshot of 15~November~2026). ``Team above'' and ``Team below'' are the other teams ranked directly above and below G1 seed 123.}
     \label{tab:leaderboard}
+    \resizebox{\textwidth}{!}{%
     \begin{tabular}{lcccc}
     \toprule
      & en & fr & it & zh \\
     \midrule
     1st place & 0.4336 & 0.4738 & 0.4511 & 0.5040 \\
-    3rd place & 0.4161 & 0.4511 & 0.4425 & 0.4764 \\
-    5th place & 0.3879 & 0.4071 & 0.4213 & 0.4564 \\
+    Team above & 0.3943 & 0.4440 & 0.4295 & 0.5040 \\
+    Team below & 0.3879 & 0.4071 & 0.4213 & 0.4845 \\
     \midrule
-    Our shared-task entry (rank) & 0.3516 (8th) & 0.3968 (6th) & 0.3926 (7th) & 0.4564 (5th) \\
-    G1, this thesis (would rank) & 0.3906 (5th) & 0.4204 (5th) & 0.4237 (5th) & 0.4836 (3rd) \\
+    Our shared-task entry (official ranking) & 0.3516 (8th) & 0.3968 (6th) & 0.3926 (7th) & 0.4564 (5th) \\
+    G1 seed 123 (current leaderboard) & 0.3920 (5th) & 0.4237 (5th) & 0.4286 (5th) & 0.4870 (2nd) \\
+    G1 three-seed mean (would rank) & 0.3906 (5th) & 0.4204 (5th) & 0.4237 (5th) & 0.4836 (3rd) \\
     \bottomrule
-    \end{tabular}
+    \end{tabular}}
 \end{table}
 
-In Chinese the final detector would place third, 0.0009 behind second place. Our Cor is still well below that of the top teams: in English it is 0.4549 against 0.5534 for the winner. The remaining gap is mostly in how well the probabilities rank characters, not in where the spans are.
+Our Cor is still well below that of the top teams: in English it is 0.4549 (seed mean) against 0.5534 for the winner. The remaining gap is mostly in how well the probabilities rank characters, not in where the spans are.
 
 \section{Summary of decisions}
 
