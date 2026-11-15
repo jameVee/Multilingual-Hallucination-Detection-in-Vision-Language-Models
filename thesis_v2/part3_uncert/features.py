@@ -16,6 +16,11 @@ and asserts: features + explicitly skipped ids == every record of the split.
 
 Usage (nlp2, after extract_features_all has run):
     python -m thesis_v2.part3_uncert.features --build
+    python -m thesis_v2.part3_uncert.features --build --source gemma3_12b   # R7 second judge
+
+--source qwen (default) is the original probe judge. Any other source is a backbone whose
+features came from extract_features_judge2.py (every record of every split, chunked);
+it gets its own compact dir, and there every record must be covered.
 """
 from __future__ import annotations
 
@@ -26,6 +31,7 @@ import numpy as np
 
 from thesis_v2.common.paths import OLD_FEATURES_DIR, RUNS_DIR
 from thesis_v2.part3_uncert.extract_features_all import CLEAN_FEATURES_DIR
+from thesis_v2.part3_uncert.extract_features_judge2 import features_dir
 from solutions.common import data_io
 
 COMPACT_DIR = RUNS_DIR / "part3" / "compact"
@@ -33,7 +39,16 @@ N_HIDDEN, N_LOOKBACK, PCA_SAMPLE, SEED = 256, 128, 200_000, 0
 SPLIT_FILES = {"train": data_io.TRAIN_FILE, "val": data_io.VAL_FILE, "test": data_io.TEST_FILE}
 
 
-def shard_files(split):
+def compact_dir(source="qwen"):
+    return COMPACT_DIR if source == "qwen" else RUNS_DIR / "part3" / f"compact_{source}"
+
+
+def shard_files(split, source="qwen"):
+    if source != "qwen":
+        files = sorted(features_dir(source).glob(f"{split}_chunk*.npz"))
+        if not files:
+            raise FileNotFoundError(f"no {split} chunks under {features_dir(source)}")
+        return files
     files = sorted(OLD_FEATURES_DIR.glob(f"{split}_shard*.npz"))
     if split != "test":
         files += sorted(CLEAN_FEATURES_DIR.glob(f"{split}_shard*.npz"))
@@ -42,9 +57,9 @@ def shard_files(split):
     return files
 
 
-def fit_pca(rng):
+def fit_pca(rng, source="qwen"):
     """PCA bases for hidden_-1 and lookback from a token sample of train shards."""
-    files = shard_files("train")
+    files = shard_files("train", source)
     per_file = PCA_SAMPLE // len(files) + 1
     hs, ls = [], []
     for f in files:
@@ -61,12 +76,12 @@ def fit_pca(rng):
     return out
 
 
-def compact(split, pca):
+def compact(split, pca, source="qwen"):
     hm, hp = pca["hidden"]
     lm, lp = pca["lookback"]
     per_rec = {}
     skipped = set()
-    for f in shard_files(split):
+    for f in shard_files(split, source):
         z = np.load(f, allow_pickle=True)
         if "skipped_ids" in z.files:
             skipped |= set(z["skipped_ids"].tolist())
@@ -83,6 +98,9 @@ def compact(split, pca):
     records = data_io.load_jsonl(SPLIT_FILES[split])
     ids = [r["id"] for r in records]
     missing = set(ids) - set(per_rec) - skipped
+    if source != "qwen" and missing:
+        raise RuntimeError(f"{source} {split}: {len(missing)} records have neither features nor an explicit "
+                           f"skip (e.g. {sorted(missing)[:3]}) -- extraction incomplete")
     # labeled records the old run skipped are not recorded as skipped; they are listed
     # here and get empty predictions -- that is penalized (gold non-empty), not free
     labeled = {r["id"] for r in records if r.get("labels")}
@@ -93,7 +111,7 @@ def compact(split, pca):
                            f"explicit skip (e.g. {clean_missing[:3]}) -- run extract_features_all first")
     order = [i for i in ids if i in per_rec]
     rec_ptr = np.cumsum([0] + [len(per_rec[i][1]) for i in order])
-    np.savez(COMPACT_DIR / f"{split}.npz",
+    np.savez(compact_dir(source) / f"{split}.npz",
              x=np.concatenate([per_rec[i][0] for i in order]),
              y=np.concatenate([per_rec[i][1] for i in order]).astype(np.int8),
              off_start=np.concatenate([per_rec[i][2] for i in order]).astype(np.int32),
@@ -105,22 +123,24 @@ def compact(split, pca):
           f"{len(old_unrecorded)} labeled records missing from the old run")
 
 
-def load(split):
-    z = np.load(COMPACT_DIR / f"{split}.npz", allow_pickle=True)
+def load(split, source="qwen"):
+    z = np.load(compact_dir(source) / f"{split}.npz", allow_pickle=True)
     return {k: z[k] for k in z.files}
 
 
-def build():
-    COMPACT_DIR.mkdir(parents=True, exist_ok=True)
-    pca = fit_pca(np.random.default_rng(SEED))
-    np.savez(COMPACT_DIR / "pca.npz", **{f"{n}_{p}": v for n, (m, b) in pca.items() for p, v in
+def build(source="qwen"):
+    compact_dir(source).mkdir(parents=True, exist_ok=True)
+    pca = fit_pca(np.random.default_rng(SEED), source)
+    np.savez(compact_dir(source) / "pca.npz", **{f"{n}_{p}": v for n, (m, b) in pca.items() for p, v in
                                          (("mean", m), ("basis", b))})
     for split in ("train", "val", "test"):
-        compact(split, pca)
+        compact(split, pca, source)
 
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument("--build", action="store_true")
-    if p.parse_args().build:
-        build()
+    p.add_argument("--source", default="qwen")
+    a = p.parse_args()
+    if a.build:
+        build(a.source)

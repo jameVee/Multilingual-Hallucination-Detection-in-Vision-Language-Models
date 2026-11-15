@@ -51,8 +51,9 @@ def load_processor(bb: Backbone, source=None):
     return processor
 
 
-def load_model(bb: Backbone, device, load_in_4bit=True):
+def load_model(bb: Backbone, device, load_in_4bit=True, attn_implementation=None):
     from transformers import AutoModelForImageTextToText, BitsAndBytesConfig
+    extra = {"attn_implementation": attn_implementation} if attn_implementation else {}
     dtype = best_dtype(device)
     quant = None
     if load_in_4bit:
@@ -63,7 +64,7 @@ def load_model(bb: Backbone, device, load_in_4bit=True):
     device_map = {"": device} if device != "cpu" else None
     model = AutoModelForImageTextToText.from_pretrained(
         bb.model_id, quantization_config=quant, dtype=dtype, device_map=device_map,
-        trust_remote_code=bb.trust_remote_code,
+        trust_remote_code=bb.trust_remote_code, **extra,
     )
     return model, dtype
 

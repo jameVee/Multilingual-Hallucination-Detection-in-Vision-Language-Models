@@ -24,6 +24,7 @@ force in --selftest.
 Usage (nlp2):
     python -m thesis_v2.part3_uncert.crf_probe --selftest
     python -m thesis_v2.part3_uncert.crf_probe --seed 42 --gpu_index 0 [--multilabel]
+    python -m thesis_v2.part3_uncert.crf_probe --seed 42 --gpu_index 0 --multilabel --source gemma3_12b  # R7
 """
 from __future__ import annotations
 
@@ -288,6 +289,7 @@ def main():
     p.add_argument("--gpu_index", type=int, default=None)
     p.add_argument("--multilabel", action="store_true")
     p.add_argument("--selftest", action="store_true")
+    p.add_argument("--source", default="qwen", help="frozen judge whose features are read (R7: gemma3_12b)")
     args = p.parse_args()
     if args.selftest:
         return selftest()
@@ -296,7 +298,7 @@ def main():
     rng = np.random.default_rng(args.seed)
     device = f"cuda:{args.gpu_index}" if torch.cuda.is_available() and args.gpu_index is not None else \
         ("cuda" if torch.cuda.is_available() else "cpu")
-    train, val, test = features.load("train"), features.load("val"), features.load("test")
+    train, val, test = (features.load(s, args.source) for s in ("train", "val", "test"))
     if args.multilabel:
         train["Y"], val["Y"] = multilabel_targets(train, "train"), multilabel_targets(val, "val")
     lang_ids = {lg: i for i, lg in enumerate(LANGUAGES)}
@@ -307,7 +309,8 @@ def main():
     sel_idx = [j for j, rid in enumerate(val["record_id"]) if rid in sel]
     model = Probe(train["x"].shape[1]).to(device)
     opt = torch.optim.AdamW(model.parameters(), lr=HP["lr"])
-    tag = f"crf{'ml' if args.multilabel else ''}_seed{args.seed}"
+    src = "" if args.source == "qwen" else f"_{args.source}"
+    tag = f"crf{'ml' if args.multilabel else ''}{src}_seed{args.seed}"
     out_dir = RUNS_DIR / "part3" / tag
     out_dir.mkdir(parents=True, exist_ok=True)
     best, bad, log = float("inf"), 0, []
@@ -336,7 +339,7 @@ def main():
             if bad >= HP["patience"]:
                 break
     model.load_state_dict(torch.load(out_dir / "model.pt", map_location=device))
-    (out_dir / "train_log.json").write_text(json.dumps({"hp": HP, "seed": args.seed,
+    (out_dir / "train_log.json").write_text(json.dumps({"hp": HP, "seed": args.seed, "source": args.source,
                                                         "multilabel": args.multilabel, "log": log}, indent=2))
 
     name = f"3b_{tag}"

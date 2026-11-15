@@ -367,3 +367,49 @@ reproduce F3 exactly, and G1/G2 to keep exactly F3's characters (IoU unchanged).
   extension of the final system, not as a pre-registered result.
 - Test files for G1, one per seed (format-checked), are in
   `runs/integration/graded/submission_G1_seed{42,123,2024}/`.
+
+## R7: second frozen judge for the probe, completing R1 (2026-11-15, written before any Gemma feature exists)
+
+**Why.** R1 required a second probe judge from another family (Gemma-3-12B, 4-bit) because
+the Part 1 winner is Qwen3-VL-8B, but it was not run before D4. The thesis lists this as
+a limitation, and it explains the probe's small gain by correlated errors (record-level
+Pearson 0.76 between judge and Qwen probe). R7 runs it now. Because D4 and D6 are already
+made, any change to the final system is reported as post-hoc, like R6.
+
+**What is fixed in advance.**
+- Judge: `google/gemma-3-12b-it`, frozen, not fine-tuned, language model in 4-bit NF4
+  (vision tower bf16), eager attention. Same plain VQA framing and the same per-record
+  feature function as the Qwen probe (`extract_features_judge2.py`, which calls the old
+  extractor's `process_record` unchanged): entropy, NLL, look-back ratio of every LM
+  attention head (48 layers x 16 heads = 768), last-layer hidden state (3,840).
+  Gemma 3 attends locally (1,024-token window) in 5 of every 6 layers. The look-back
+  ratio is computed as is in every layer; nothing is dropped or re-weighted.
+- Compaction: same PCA sizes (hidden 256, look-back 128) fitted on a 200k-token train
+  sample only, same standardisation. Every train/val/test record must have features or an
+  explicit skip (enforced).
+- Probe: the multi-label BiGRU + 5-binary-CRF probe with the unchanged HP set, seeds
+  42/123/2024, early stopping on val_select loss (`crf_probe --multilabel --source gemma3_12b`).
+
+**Candidates for D7 (3, all on the per-seed G1 voters, per-label vote, k = 3 unchanged,
+graded="prob"; seed s uses the judge, samples and probes of seed s):**
+- H0: G1 as is (8 samples + greedy + Qwen probe, M = 10).
+- H1: G1 + Gemma probe as an 11th voter (M = 11).
+- H2: G1 with the Gemma probe in place of the Qwen probe (M = 10).
+
+**Rule.**
+- D7 picks the highest mean val_select Cor+Lbl over the 3 seeds and is logged once.
+- A claim that H1 or H2 improves on G1 uses the "beats baseline" rule with G1 as the
+  baseline (G1 seed std 0.0031): (a) mean val_select gain > 0.0031, (b) same sign on
+  val_confirm, (c) val_confirm paired-bootstrap CI above 0.
+- Test files (3 seeds) are written only if H1 or H2 is chosen. If H0 is chosen, nothing
+  is submitted and G1 stays the final system.
+- No further variants follow from this result (no other k, no probe-only weighting, no
+  other layers or judges).
+
+**Diagnostics (reported, select nothing).**
+- Gemma probe alone on val_select / val_confirm (3 seeds), next to the Qwen probe (0.3844).
+- Record-level Pearson correlation on val_select between the judge (C0) and each probe's
+  per-record Cor+Lbl, and between the two probes. Hypothesis H5 (stated now): the Gemma
+  probe's correlation with the judge is below the Qwen probe's 0.76.
+- Spearman over the 20 category-language cells between F2 and the Gemma probe (H4 had
+  0.95 for the Qwen probe).
