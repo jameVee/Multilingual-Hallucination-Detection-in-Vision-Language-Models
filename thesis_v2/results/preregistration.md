@@ -413,3 +413,10 @@ graded="prob"; seed s uses the judge, samples and probes of seed s):**
   probe's correlation with the judge is below the Qwen probe's 0.76.
 - Spearman over the 20 category-language cells between F2 and the Gemma probe (H4 had
   0.95 for the Qwen probe).
+
+**Note before any Gemma result (2026-11-15).** A smoke test of `integration/r7.py` with
+the Qwen probe standing in for the Gemma probe (not a candidate, selects nothing) checked
+that H0 reproduces G1 exactly. In that stand-in, counting the Qwen probe twice gave seed-42
+val_select 0.4471 against 0.4463 for H0. So part of any H1 gain can come from giving
+probe votes more weight alone; H1 is read as evidence of new information only to the
+extent that it exceeds this.
