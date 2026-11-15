@@ -1,0 +1,40 @@
+{
+ "kinds": {
+  "descriptive": {
+   "share_train_val": 0.4745066878559131,
+   "share_test": 0.4544712127398938,
+   "hallucinated": 0.7100195367010885,
+   "invention": 0.40664247837008094,
+   "mischaracterization": 0.5365615406084286,
+   "OCR": 0.012140664247837009,
+   "miscounting": 0.08191459670667038,
+   "other": 0.1036840636338264
+  },
+  "count-prefixed": {
+   "share_train_val": 0.09389484836445504,
+   "share_test": 0.07880767660269498,
+   "hallucinated": 0.693935119887165,
+   "invention": 0.4012693935119887,
+   "mischaracterization": 0.35684062059238364,
+   "OCR": 0.11212976022566996,
+   "miscounting": 0.15162200282087446,
+   "other": 0.05923836389280677
+  },
+  "flickr": {
+   "share_train_val": 0.43159846377963185,
+   "share_test": 0.4667211106574112,
+   "hallucinated": 0.7264498312365756,
+   "invention": 0.41899355630561524,
+   "mischaracterization": 0.36161399202209266,
+   "OCR": 0.10171831850260817,
+   "miscounting": 0.15971156796563363,
+   "other": 0.07793801779687021
+  }
+ },
+ "english_descriptive": {
+  "n": 1812,
+  "answer_mentions_variety_word": 0.4575055187637969,
+  "n_hallucinated": 1383,
+  "variety_word_inside_gold_span": 0.13882863340563992
+ }
+}

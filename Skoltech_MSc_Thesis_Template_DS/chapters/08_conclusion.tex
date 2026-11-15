@@ -30,6 +30,15 @@ For the text-only predecessor task, synthetic data was a central ingredient of s
 
 Methodologically, the program shows that validation reuse can be limited in practice without slowing the work much. The decision log contains eight decisions and 25 candidate evaluations. Several results that looked promising on val\_select did not confirm on val\_confirm, including the first single-label vote and, by the strict criterion, F2 and F3 alone. The test results then agreed with the order seen on validation.
 
+\paragraph{The image file name.}
+Our detector deliberately does not see the image file name, although TÜRKSAT found it useful. The reason is that the name describes how the dataset was built rather than what is in a given answer. The numbers below are from the training and validation data:
+\begin{itemize}
+    \item \textbf{Many names are descriptive.} 47\% of answers (45\% on test) belong to images named after the object and an unusual variant of it, for example a lion cub (\texttt{lion\_Lion\_cub}) or a peeled lemon (\texttt{lemon\_peeled\_lemon}). The builders chose these images for that property.
+    \item \textbf{The name shifts the prior.} Such answers contain a mischaracterization in 54\% of cases, against 36\% for the other images.
+    \item \textbf{It does not point to the span.} Among hallucinated English answers about these images, a word of the variety name falls inside a gold span in only 14\% of cases, although 46\% of the answers mention it.
+\end{itemize}
+A judge that reads the name therefore mainly learns that a descriptive name means a higher chance of mischaracterization. This is the same kind of construction shortcut that Section~\ref{sec:exp-synth} found in template-based synthetic data. In real use, images are rarely named by a curator, and a name that is present can be wrong. Part of the lead of the top systems may thus rest on information that does not carry over beyond this benchmark. A detector that does use such metadata should be trained with the metadata randomly removed and reported both with and without it.
+
 \section{Comparative analysis}
 
 Compared with our shared-task entry, the final detector gains $+0.032$ Cor+Lbl on test. About half comes from engineering of the base pipeline: the reimplementation and the decoder fix. The other half comes from the uncertainty components. On the post-competition leaderboard, our best G1 submission moved the team from 8th, 6th, 7th and 5th to 5th, 5th, 5th and 2nd in English, French, Italian and Chinese. The three-seed mean would rank 5th, 5th, 5th and 3rd. The remaining gap to the top teams is largest in Cor. In English, our Cor is 0.455 against 0.553 for the winner, while our IoU (0.405) is 0.08 behind its 0.487. This points to calibration of per-character probabilities, rather than span finding, as the most promising direction. The graded output already moved Cor by 0.014 without changing any span.
