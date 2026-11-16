@@ -429,3 +429,24 @@ and became inf, so the PCA failed. Every other value in all 42 chunks is finite 
 dropped before PCA (rule in `features.py`: drop hidden columns that are non-finite in the
 train PCA sample; the Qwen features have none, so the Qwen pipeline is unchanged). The
 alternative, re-extracting in float32, would cost ~5 GPU-hours for one near-constant channel.
+
+**R7 outcome (2026-11-16, D7_judge2 logged once; `results/r7_judge2.json`).**
+- Gemma probes trained 10 / 8 / 8 epochs (seeds 42 / 123 / 2024), early-stopped on val_select loss.
+- Mean val_select Cor+Lbl: H0 (G1) 0.4433, **H1 0.4467**, H2 0.4424. D7 chooses H1.
+- H1 vs G1, "beats baseline": (a) val_select gain +0.0034 > G1 seed std 0.0031 (narrowly);
+  (b) val_confirm +0.0039, same sign; (c) val_confirm paired-bootstrap 95% CI
+  [+0.0018, +0.0059], above 0. H1 meets the rule. Per seed, val_select gains are
+  +0.0042 / +0.0030 / +0.0031; on val_confirm +0.0050 / -0.0002 / +0.0069.
+- The seed-42 H1 gain (+0.0042) is about five times the gain from counting the Qwen probe
+  twice (+0.0008, smoke note above), so most of it is not just extra probe weight.
+- H2 (Gemma replaces Qwen probe) does not beat G1: val_select -0.0009, CI [-0.0031, +0.0010].
+- Gemma probe alone: val_select 0.354 (3-seed mean; Qwen probe 0.3844), val_confirm 0.339.
+- H5: record-level Pearson with C0 is 0.742 for the Gemma probe (0.705 / 0.796 / 0.726)
+  against 0.759 for the Qwen probe (0.763 / 0.750 / 0.763). Lower on average, as
+  hypothesised, but not on every seed (seed 123 is higher), so H5 is weakly supported.
+  The two probes correlate 0.79 with each other.
+- H4-style cell Spearman between F2 and the Gemma probe: 0.967 (Qwen probe 0.95); the
+  probes succeed in the same cells as the voter.
+- As pre-registered, H1 is a post-hoc extension (like R6). Test files for 3 seeds are in
+  `runs/integration/r7/submission_H1_seed{42,123,2024}/` (format checker OK); the user
+  submits them.
