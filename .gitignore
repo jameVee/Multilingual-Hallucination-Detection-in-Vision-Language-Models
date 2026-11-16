@@ -34,3 +34,6 @@ solutions/*/checkpoint*/
 
 # thesis_v2 heavy artifacts (checkpoints, predictions, feature shards, API caches)
 thesis_v2/runs/
+
+# thesis LaTeX sources and PDF (kept locally, not in the repository)
+Skoltech_MSc_Thesis_Template_DS/
