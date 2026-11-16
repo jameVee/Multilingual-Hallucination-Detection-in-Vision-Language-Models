@@ -145,3 +145,4 @@ Cor	0.5025 (0.0024)	vs G1 0.5008 (+0.0017)
 IoU	0.4544 (0.0029)	vs G1 0.4515 (+0.0028)
 per language (3-seed mean Cor+Lbl): EN 0.3921  FR 0.4218  IT 0.4258  ZH 0.4851  (vs G1 +0.0014 / +0.0013 / +0.0021 / +0.0015)
 val -> test: val_select +0.0034, val_confirm +0.0039, test +0.0016 (same sign, about half the size)
+live leaderboard snapshot 2026-11-16 (all four SmurfCat entries = J1/H1 seed 123): EN 5th 0.3927, FR 5th 0.4264, IT 4th 0.4315, ZH 2nd 0.4874; by Cor alone 10/7/7/4, by IoU 8/6/6/5; lowercase 'smurfcat' = teammate's separate system

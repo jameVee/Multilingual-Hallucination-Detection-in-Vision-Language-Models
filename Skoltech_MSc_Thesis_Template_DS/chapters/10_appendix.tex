@@ -54,10 +54,12 @@ VLM response to analyse:
      & max.\ sequence & 4,096 tokens \\
     Decoding & greedy & 1 decode \\
      & sampling & 8 decodes, temperature 0.7 \\
-    Vote & threshold & $k = 3$ (of 9 or 10 voters), per label \\
+    Vote & threshold & $k = 3$ (of 9, 10 or 11 voters), per label \\
      & output probability & per character, rounded to 2 decimals \\
     Probe features & frozen model & Qwen3-VL-8B-Instruct (bf16), teacher-forced \\
      & per token & entropy, NLL, look-back ratio ($36 \times 32$), last hidden state (4,096) \\
+    Second probe & frozen model & Gemma-3-12B-it (4-bit NF4, eager attention), teacher-forced \\
+     & per token & entropy, NLL, look-back ratio ($48 \times 16$), last hidden state (3,840, one channel dropped) \\
      & reduction & PCA on train: hidden $\to$ 256, look-back $\to$ 128; standardised \\
     Probe model & encoder & Linear 512 $\to$ BiGRU 256, language embedding 8, dropout 0.2 \\
      & heads & 5 binary linear-chain CRFs, multi-label targets \\
@@ -90,14 +92,17 @@ VLM response to analyse:
 \section*{D. Reproducibility}
 \addcontentsline{toc}{section}{D. Reproducibility}
 
-All code, the frozen validation split, the decision log, the pre-registered rules (R1--R6) and every validation score file are kept in the project repository under \texttt{thesis\_v2/}. The main entry points are:
+All code, the frozen validation split, the decision log, the pre-registered rules (R1--R7) and every validation score file are kept in the public project repository, branch \texttt{thesis-v2}, under \texttt{thesis\_v2/}:
+\begin{center}
+\url{https://github.com/jameVee/Multilingual-Hallucination-Detection-in-Vision-Language-Models/tree/thesis-v2}
+\end{center}
+The main entry points are:
 \begin{itemize}
     \item \texttt{part1\_models/train.py}, \texttt{predict.py}: judge training and decoding;
     \item \texttt{common/span\_io.py}: the label-aware span decoder;
     \item \texttt{common/voting.py}: the per-label vote, with graded output;
-    \item \texttt{part3\_uncert/crf\_probe.py}: the probe;
-    \item \texttt{integration/build\_candidates.py}, \texttt{graded.py}: fusion and the final decisions;
+    \item \texttt{part3\_uncert/crf\_probe.py}: the probe; \texttt{extract\_features\_judge2.py}: features of the second judge;
+    \item \texttt{integration/build\_candidates.py}, \texttt{graded.py}, \texttt{r7.py}: fusion and the final decisions;
     \item \texttt{common/evaluate.py}: the official scoring with the coverage guard and the paired bootstrap.
 \end{itemize}
 Official test results are recorded in \texttt{results/test\_results.txt}.
-% TODO: add the public repository URL if the code is released.
