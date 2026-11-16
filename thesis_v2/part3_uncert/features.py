@@ -68,8 +68,15 @@ def fit_pca(rng, source="qwen"):
         idx = rng.choice(n, min(n, per_file), replace=False)
         hs.append(z["hidden_-1"][idx].astype(np.float32))
         ls.append(z["lookback"][idx].astype(np.float32))
-    out = {}
-    for name, block, k in [("hidden", np.concatenate(hs), N_HIDDEN), ("lookback", np.concatenate(ls), N_LOOKBACK)]:
+    hs = np.concatenate(hs)
+    # Hidden columns with non-finite values in the train sample are dropped before PCA.
+    # Qwen has none (unchanged). Gemma-3-12B has one "massive activation" channel (2339)
+    # that overflows the float16 storage on ~99% of tokens (R7 deviation note).
+    keep = np.isfinite(hs).all(0)
+    if not keep.all():
+        print(f"{source}: dropping non-finite hidden columns {np.flatnonzero(~keep).tolist()}")
+    out = {"hidden_keep": keep}
+    for name, block, k in [("hidden", hs[:, keep], N_HIDDEN), ("lookback", np.concatenate(ls), N_LOOKBACK)]:
         mean = block.mean(0)
         _, _, vt = np.linalg.svd(block - mean, full_matrices=False)
         out[name] = (mean, vt[:k].T.astype(np.float32))
@@ -87,7 +94,10 @@ def compact(split, pca, source="qwen"):
             skipped |= set(z["skipped_ids"].tolist())
         x = np.concatenate([z["entropy"][:, None], z["nll"][:, None],
                             (z["lookback"].astype(np.float32) - lm) @ lp,
-                            (z["hidden_-1"].astype(np.float32) - hm) @ hp], axis=1).astype(np.float16)
+                            (z["hidden_-1"][:, pca["hidden_keep"]].astype(np.float32) - hm) @ hp],
+                           axis=1).astype(np.float16)
+        if not np.isfinite(x).all():
+            raise ValueError(f"{f.name}: non-finite compact features (a hidden column outside the train sample?)")
         rid = z["record_id"]
         bounds = np.flatnonzero(np.r_[True, rid[1:] != rid[:-1], True])
         for a, b in zip(bounds[:-1], bounds[1:]):
@@ -131,8 +141,8 @@ def load(split, source="qwen"):
 def build(source="qwen"):
     compact_dir(source).mkdir(parents=True, exist_ok=True)
     pca = fit_pca(np.random.default_rng(SEED), source)
-    np.savez(compact_dir(source) / "pca.npz", **{f"{n}_{p}": v for n, (m, b) in pca.items() for p, v in
-                                         (("mean", m), ("basis", b))})
+    np.savez(compact_dir(source) / "pca.npz", hidden_keep=pca["hidden_keep"],
+             **{f"{n}_{p}": v for n in ("hidden", "lookback") for p, v in zip(("mean", "basis"), pca[n])})
     for split in ("train", "val", "test"):
         compact(split, pca, source)
 

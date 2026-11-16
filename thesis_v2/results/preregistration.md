@@ -420,3 +420,12 @@ that H0 reproduces G1 exactly. In that stand-in, counting the Qwen probe twice g
 val_select 0.4471 against 0.4463 for H0. So part of any H1 gain can come from giving
 probe votes more weight alone; H1 is read as evidence of new information only to the
 extent that it exceeds this.
+
+**Deviation (2026-11-16, after extraction, before any Gemma probe was trained or scored).**
+The extractor stored Gemma's hidden states as float16. One of its 3,840 hidden channels
+(index 2339, a "massive activation" channel) exceeds the float16 range on ~99% of tokens
+and became inf, so the PCA failed. Every other value in all 42 chunks is finite (largest
+|value| 26,880), and look-back, entropy and NLL are finite everywhere. That channel is
+dropped before PCA (rule in `features.py`: drop hidden columns that are non-finite in the
+train PCA sample; the Qwen features have none, so the Qwen pipeline is unchanged). The
+alternative, re-extracting in float32, would cost ~5 GPU-hours for one near-constant channel.
