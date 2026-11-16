@@ -8,8 +8,8 @@ The detector has two branches that read the same record $x = (I, q, r)$, and one
 
 \begin{itemize}
     \item \textbf{Generative branch.} A VLM judge, fine-tuned to list the hallucinated spans of $r$ as JSON, is decoded once greedily and $N = 8$ times by sampling. A label-aware span decoder converts each decode into character-offset spans. Together they give nine sets of labelled spans.
-    \item \textbf{Uncertainty branch.} A second copy of the same backbone, frozen and \emph{not} fine-tuned, reads $r$ as if it were its own answer to $q$ about $I$. From this pass we take four signals at every answer token: the entropy of the next-token distribution, the negative log-likelihood of the observed token, the share of attention each head pays to the image (look-back ratio), and the last-layer hidden state. A BiGRU encoder with five binary CRF heads decodes them into a tenth set of labelled spans.
-    \item \textbf{Fusion.} A per-label, per-character vote keeps a character for category $L$ when at least $k = 3$ of the ten voters mark it with $L$. Each kept character gets its own probability, the mean of the voters' probabilities for that label. Consecutive characters with the same label and the same rounded probability form one output span.
+    \item \textbf{Uncertainty branch.} A second copy of the same backbone, frozen and \emph{not} fine-tuned, reads $r$ as if it were its own answer to $q$ about $I$. From this pass we take four signals at every answer token: the entropy of the next-token distribution, the negative log-likelihood of the observed token, the share of attention each head pays to the image (look-back ratio), and the last-layer hidden state. A BiGRU encoder with five binary CRF heads decodes them into a tenth set of labelled spans. A second probe of the same design reads a frozen Gemma-3-12B, a VLM of another family, and gives an eleventh set.
+    \item \textbf{Fusion.} A per-label, per-character vote keeps a character for category $L$ when at least $k = 3$ of the eleven voters mark it with $L$. Each kept character gets its own probability, the mean of the voters' probabilities for that label. Consecutive characters with the same label and the same rounded probability form one output span.
 \end{itemize}
 
 The two branches are deliberately different in kind. The generative branch is supervised and black-box: it only needs the judge's output text. The uncertainty branch reads model internals and is trained separately on the same data. Each component is motivated by an experiment in Chapter~\ref{chap:experiments}: the backbone by the Part~1 comparison, the voter and the probe by the Part~3 ablations, and the graded probability by the analysis of the Cor metric.
@@ -32,11 +32,11 @@ The two branches are deliberately different in kind. The generative branch is su
   \node[gen] (dec)    at (7.4,  1.6) {1 greedy decode\\+ 8 samples\\($T = 0.7$)};
   \node[gen] (spanio) at (11.1, 1.6) {\textbf{B. Span decoder}\\JSON text $\rightarrow$\\char offsets};
   % uncertainty branch (bottom row)
-  \node[unc] (frozen) at (3.7,  -1.6) {\textbf{D. Frozen judge}\\Qwen3-VL-8B,\\teacher-forced on $r$};
+  \node[unc] (frozen) at (3.7,  -1.6) {\textbf{D. Frozen judges}\\Qwen3-VL-8B and\\Gemma-3-12B,\\teacher-forced on $r$};
   \node[unc] (feat)   at (7.4,  -1.6) {token features:\\entropy, NLL,\\look-back, hidden};
-  \node[unc] (crf)    at (11.1, -1.6) {BiGRU encoder\\+ 5 binary CRFs\\(probe)};
+  \node[unc] (crf)    at (11.1, -1.6) {BiGRU encoder\\+ 5 binary CRFs\\(one probe per judge)};
   % fusion (right column)
-  \node[fus] (vote)  at (15.6,  1.6) {\textbf{C. Per-label vote}\\10 voters,\\keep $\mathrm{votes}_L(c) \ge 3$};
+  \node[fus] (vote)  at (15.6,  1.6) {\textbf{C. Per-label vote}\\11 voters,\\keep $\mathrm{votes}_L(c) \ge 3$};
   \node[fus] (grade) at (15.6, -1.6) {\textbf{E. Graded output}\\per-character\\probability $\hat p_L(c)$};
   \node[data, minimum width=2.9cm] (out) at (15.6, -3.75) {labelled spans $(a, b, p, L)$};
   % arrows
@@ -47,7 +47,7 @@ The two branches are deliberately different in kind. The generative branch is su
   \draw[arr] (frozen) -- (feat);
   \draw[arr] (feat) -- (crf);
   \draw[arr] (spanio) -- node[above, font=\footnotesize] {9 voters} (vote);
-  \draw[arr] (crf.east) -- ++(0.5,0) |- node[pos=0.25, right, font=\footnotesize] {1 voter} ([yshift=-3mm]vote.west);
+  \draw[arr] (crf.east) -- ++(0.5,0) |- node[pos=0.25, right, font=\footnotesize] {2 voters} ([yshift=-3mm]vote.west);
   \draw[arr] (vote) -- (grade);
   \draw[arr] (grade) -- (out);
   % branch frames
@@ -59,7 +59,7 @@ The two branches are deliberately different in kind. The generative branch is su
   \end{scope}
 \end{tikzpicture}%
 }
-\caption{Architecture of the detector. The generative branch (A, B) and the uncertainty branch (D) each produce labelled spans; the fusion step (C, E) votes on characters per label and keeps a graded per-character probability.}
+\caption{Architecture of the detector. The generative branch (A, B) and the uncertainty branch (D) each produce labelled spans: nine decodes of the judge and one probe on each of two frozen judges. The fusion step (C, E) votes on characters per label and keeps a graded per-character probability.}
 \label{fig:arch}
 \end{figure}
 
@@ -132,13 +132,16 @@ Token $t$ is \textsf{IN} for category $L$ if \emph{any} gold span of category $L
 \paragraph{Training.}
 Adam, learning rate $10^{-3}$, batch size 16, at most 20 epochs. Training stops early on the selection-half \emph{loss}, not on the metric, with patience 3. Records are cut at 1,024 tokens. The features cover every train, validation and test record, and the evaluation code checks this: a record without features would otherwise receive an empty prediction, and for a clean record that scores a perfect 1.0 (Section~\ref{sec:exp-fixes}). The probe is trained with three seeds.
 
+\paragraph{Second probe judge.}
+A probe that reads the same backbone as the judge may share its blind spots. A second probe therefore reads a frozen Gemma-3-12B-it~\cite{gemma2025gemma3}, a VLM of another family. Its language model is loaded in 4-bit NF4 with eager attention, so that attention weights are available. Features, PCA sizes, architecture and hyperparameters are those of the Qwen probe; only the input widths differ: 48 layers $\times$ 16 heads give 768 look-back ratios, and the hidden state has 3,840 values. Gemma~3 attends within a local window of 1,024 tokens in five of every six layers. The look-back ratio is computed as it is in every layer. One hidden channel of Gemma carries very large activations and overflowed the 16-bit storage on almost every token; it was dropped before the PCA, a deviation recorded before any probe was trained.
+
 \section{Fusion and graded probabilities}\label{sec:fusion}
 
 \paragraph{Probe as a voter.}
-The probe enters the vote of Section~\ref{sec:vote} as \emph{one} more voter with the same weight as a single decode, giving $M = 10$ voters. The threshold stays at $k = 3$, the value already chosen, and is not re-tuned. This is system F3. Because the probe counts like one decode, it cannot create spans on its own. It can only add the deciding vote where two decodes already agree, or reinforce where more do.
+The probe enters the vote of Section~\ref{sec:vote} as \emph{one} more voter with the same weight as a single decode, giving $M = 10$ voters. The threshold stays at $k = 3$, the value already chosen, and is not re-tuned. This is system F3. Because the probe counts like one decode, it cannot create spans on its own. It can only add the deciding vote where two decodes already agree, or reinforce where more do. The final detector (J1) adds the Gemma probe as an eleventh voter of the same weight ($M = 11$, $k = 3$ unchanged), on top of the graded output described next.
 
 \paragraph{Graded per-character probability.}
-The span-mean probability of the plain voter gives every character of a span the same value, which the rank-based Cor and Cor+Lbl treat as ties. Gold probabilities, however, vary inside spans: the core of a hallucination is marked by more annotators than its edges. The final detector (G1) therefore keeps the per-character value
+The span-mean probability of the plain voter gives every character of a span the same value, which the rank-based Cor and Cor+Lbl treat as ties. Gold probabilities, however, vary inside spans: the core of a hallucination is marked by more annotators than its edges. System G1 therefore keeps the per-character value
 \begin{equation}
     \hat p_L(c) = \mathrm{round}\big(\bar p_L(c), 2\big) \qquad \text{for every kept } c,
     \label{eq:graded}

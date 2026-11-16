@@ -14,13 +14,14 @@ SEEDS = {  # system -> test Cor+Lbl for seeds 42, 123, 2024
     "F2  + per-label vote": (0.4180, 0.4223, 0.4183),
     "F3  + probe voter": (0.4206, 0.4276, 0.4215),
     "G1  + graded probabilities": (0.4280, 0.4328, 0.4279),
+    "J1  + second probe (Gemma)": (0.4299, 0.4345, 0.4291),
 }
 SERIES = "#2a78d6"       # reference categorical slot 1
 INK, MUTED, GRID = "#0b0b0b", "#52514e", "#e4e3df"
 
 plt.rcParams.update({"font.family": "serif", "font.serif": ["Times New Roman", "DejaVu Serif"],
                      "font.size": 11})
-fig, ax = plt.subplots(figsize=(7.0, 3.0))
+fig, ax = plt.subplots(figsize=(7.0, 3.4))
 names = list(SEEDS)[::-1]                       # final detector at the bottom, nearest the axis
 for y, name in enumerate(names):
     vals = SEEDS[name]

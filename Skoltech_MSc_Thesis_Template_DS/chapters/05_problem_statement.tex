@@ -77,7 +77,7 @@ Table~\ref{tab:data} summarises the SHROOM-Visions 2026 data. Answers are long (
 
 Each split has about the same number of answers per language: 2,989--3,070 per language in train, 729--780 in validation and 1,201--1,254 in test.
 
-\section{Objectives and hypotheses}
+\section{Objectives and hypotheses}\label{sec:hypotheses}
 
 The objective is a detector $f$ whose primary score is higher than that of the reference detector $f_0$, the best backbone fine-tuned on the original training data alone. ``Higher'' is meant in the pre-registered sense of Section~\ref{sec:protocol}: over three training seeds, on two disjoint validation halves, with a paired bootstrap. The final claim is then confirmed on the official test set.
 
@@ -87,5 +87,6 @@ The thesis tests the following hypotheses, stated before the experiments in the 
     \item[H2] Tested in isolation, upsampling and synthetic injection have separately attributable effects on Cor+Lbl per category. In particular, heuristic injection is weaker for OCR than for other categories.
     \item[H3] A retrieval-grounded construction that reuses real annotated hallucinations is (a) harder to tell from real spans and (b) less harmful, or more helpful, for OCR than heuristic injection.
     \item[H4] The sampling-based and the learned-probe uncertainty detectors are not perfectly correlated in the category--language cells where they succeed, so they capture partly distinct evidence.
+    \item[H5] A probe on a frozen judge of another model family makes errors less correlated with the judge's than a probe on the judge's own backbone. (Added before the second-probe experiment of Section~\ref{sec:exp-judge2}, not in the proposal.)
 \end{description}
 On top of these, the \emph{main hypothesis} is that combining the judge with the uncertainty components beats $f_0$ under the protocol.

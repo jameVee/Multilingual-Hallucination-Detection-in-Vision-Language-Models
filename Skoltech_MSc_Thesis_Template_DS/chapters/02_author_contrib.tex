@@ -7,7 +7,7 @@ The author designed and implemented the work in this thesis and ran all experime
     \item \textbf{Training and inference.} Wrote the training and inference code for four VLM backbones: Qwen3-VL-8B, Gemma-3-12B, InternVL3-8B and Pixtral-12B.
     \item \textbf{Pipeline fixes.} Found and fixed the dual-label span-decoding problem and the feature-coverage leak in the earlier uncertainty pipeline.
     \item \textbf{Synthetic data.} Built the synthetic-data conditions (rarity upsampling, a new retrieval-grounded transplant method, prior-matched variants) together with the realism checks and the classifier two-sample test.
-    \item \textbf{Detector components.} Implemented the per-label self-consistency voter with graded probabilities, the feature extraction from the frozen judge, and the multi-label BiGRU--CRF probe.
+    \item \textbf{Detector components.} Implemented the per-label self-consistency voter with graded probabilities, the feature extraction from the frozen judges (Qwen3-VL-8B and Gemma-3-12B), and the multi-label BiGRU--CRF probe.
     \item \textbf{Experiments.} Ran the experiments on a shared server with RTX~3090 GPUs and carried out all analyses.
 \end{itemize}
 
